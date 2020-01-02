@@ -39,6 +39,15 @@ class GraylogComparator implements Comparator<Log> {
                 : logsWithStartLogs.get(firstLogWithTimestamp);
         LogActionWithTimestamp secondStartLog = second.getMarker() == LogMarker.START ? secondLogWithTimestamp
                 : logsWithStartLogs.get(secondLogWithTimestamp);
+        if (firstStartLog.equals(secondStartLog)) {
+            if (first.getMarker() == LogMarker.START) {
+                return -1;
+            }
+            if (second.getMarker() == LogMarker.START) {
+                return 1;
+            }
+            return 0;
+        }
 
         boolean secondStartIsEarlierThanFirst = sortedStartLogs.headSet(firstStartLog).contains(secondStartLog);
         if (first.getMarker() == LogMarker.FINISH && second.getMarker() == LogMarker.FINISH) {
@@ -137,5 +146,4 @@ class GraylogComparator implements Comparator<Log> {
             return first.getActionName().compareTo(second.getActionName());
         }
     }
-
 }
