@@ -1,0 +1,46 @@
+<html>
+<head>
+    <title>Log roots</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="css/index.css" rel="stylesheet" type="text/css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://momentjs.com/downloads/moment.js"></script>
+
+</head>
+
+<body>
+<script src="js/index.js"></script>
+</body>
+
+<div>
+    <div style="float:left; width:15%;">
+        <h4>Sources:</h4>
+        <select id="source" style="cursor: grabbing"></select>
+    </div>
+    <div style="float:left; width:20%;">
+        <h4>From date:</h4>
+        <input id="from" class="required" placeholder="yyyy-MM-ddThh:mm:ss.xxx" size="30px">
+    </div>
+    <div style="float:left; width:20%;">
+        <h4>To date:</h4>
+        <input id="to" placeholder="YYYY-MM-DDTHH:mm:ss" size="30px">
+    </div>
+    <div style="float:left; width: 15%">
+        <button class="button" onclick=setEndDateToNow()>Set end date to now</button>
+    </div>
+</div>
+
+<div style="width: 15%;">
+    <button class="button" onclick=onFindLogRoots()>Find log roots</button>
+</div>
+
+<table id="logRoots" width="75%" style="text-align: center; margin-top: 50px;" hidden>
+    <tr>
+        <th>Patient id</th>
+        <th>Payload name</th>
+        <th>Start date</th>
+        <th>End date</th>
+    </tr>
+</table>
+</html>

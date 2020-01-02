@@ -1,0 +1,45 @@
+server:
+  port: 8084
+
+spring:
+  jackson:
+    serialization.write_dates_as_timestamps: false
+  datasource:
+    url:
+    username:
+    password:
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQL9Dialect
+    properties:
+      hibernate.default_schema: logger
+      hibernate.temp.use_jdbc_metadata_defaults: false
+
+graylog:
+  common-props:
+    expired-logs-days: 2
+  auth-props:
+    user-name:
+    password:
+  common-api-props:
+    api-host:
+    session-url: /system/sessions
+    system-url: /system
+    streams-url: /streams
+  search-api-props:
+    url: /search/universal/absolute
+    url-query-param: query
+    url-from-param: from
+    url-to-param: to
+    url-filter-param: filter
+    url-sort-param: sort
+    url-limit-param: limit
+    url-offset-param: offset
+
+    url-filter-pattern: streams:%s
+    url-sort-pattern: timestamp:%s
+    url-limit-value: 1000
+    url-sort-value: asc
