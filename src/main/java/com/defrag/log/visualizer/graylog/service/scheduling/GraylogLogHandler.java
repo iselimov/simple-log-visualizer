@@ -88,7 +88,7 @@ public class GraylogLogHandler {
                     graylogSource.setLastUpdateError(null);
                     sourceRepository.save(graylogSource);
                 } catch (Exception e) {
-                    log.error("Process of updating logs finished with exception {}", e);
+                    log.error("Process of updating logs finished with exception", e);
                     graylogSource.setLastUpdateError(e.toString());
                     sourceRepository.save(graylogSource);
                 }
