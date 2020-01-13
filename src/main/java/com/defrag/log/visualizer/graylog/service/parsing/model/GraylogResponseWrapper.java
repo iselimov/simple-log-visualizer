@@ -1,4 +1,4 @@
-package com.defrag.log.visualizer.graylog.service.model;
+package com.defrag.log.visualizer.graylog.service.parsing.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;

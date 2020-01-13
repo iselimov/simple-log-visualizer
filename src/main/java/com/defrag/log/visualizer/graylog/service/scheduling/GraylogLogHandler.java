@@ -11,9 +11,9 @@ import com.defrag.log.visualizer.graylog.config.GraylogProps.SearchApiProps;
 import com.defrag.log.visualizer.graylog.http.GraylogRestTemplate;
 import com.defrag.log.visualizer.graylog.repository.GraylogSourceRepository;
 import com.defrag.log.visualizer.graylog.repository.model.GraylogSource;
-import com.defrag.log.visualizer.graylog.service.model.GraylogMessage;
-import com.defrag.log.visualizer.graylog.service.model.GraylogMessageWrapper;
-import com.defrag.log.visualizer.graylog.service.model.GraylogResponseWrapper;
+import com.defrag.log.visualizer.graylog.service.parsing.GraylogParser;
+import com.defrag.log.visualizer.graylog.service.parsing.model.GraylogResponseWrapper;
+import com.defrag.log.visualizer.graylog.service.parsing.model.LogDefinition;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,27 +24,23 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class GraylogLogHandler {
     private static final String ZONE = "Z";
-
-    private static final Pattern ACTION_PATTERN = Pattern.compile("\\w+(Action|Editor|Manager)");
-    private static final Pattern PAYLOAD_PATTERN = Pattern.compile("\\w+Payload");
-    private static final Pattern PATIENT_PATTERN = Pattern.compile("(?<=PAT)\\d+");
+    private static final int MILLISECOND_IN_NANOS = 1_000_000;
 
     private final AtomicBoolean refreshing = new AtomicBoolean();
+
+    private final GraylogParser graylogParser;
 
     private final GraylogSourceRepository sourceRepository;
     private final LogRootRepository logRootRepository;
@@ -78,19 +74,32 @@ public class GraylogLogHandler {
         String searchUrl = graylogProps.getCommonApiProps().getApiHost() + searchApiProps.getUrl();
 
         try {
-            for (GraylogSource graylogSource : sourceRepository.findAll()) {
+            for (GraylogSource source : sourceRepository.findAll()) {
                 try {
-                    LocalDateTime to = LocalDateTime.now();
+                    ZoneId sourceTimezone = ZoneId.of(source.getGraylogTimezone());
+                    LocalDateTime from = source.getLastSuccessUpdate();
 
-                    self.processSource(graylogSource, searchUrl, requestParams, to);
+                    requestParams.put(searchApiProps.getUrlFromParam(), convertDateTimeInZone(from, ZoneId.systemDefault(),
+                            sourceTimezone).toString() + ZONE);
+                    requestParams.put(searchApiProps.getUrlFilterParam(), String.format(searchApiProps.getUrlFilterPattern(),
+                            source.getGraylogUId()));
 
-                    graylogSource.setLastSuccessUpdate(to);
-                    graylogSource.setLastUpdateError(null);
-                    sourceRepository.save(graylogSource);
+                    LocalDateTime to = selectToDateAccordingToTheLimit(searchUrl, requestParams, sourceTimezone, from);
+
+                    requestParams.put(searchApiProps.getUrlToParam(), convertDateTimeInZone(to, ZoneId.systemDefault(), sourceTimezone)
+                            .toString() + ZONE);
+                    requestParams.put(searchApiProps.getUrlLimitParam(), String.valueOf(searchApiProps.getLimitPerDownload()));
+
+                    log.info("Processing source {} for the period [{}, {}]", source.getName(), from, to);
+                    self.processSource(source, searchUrl, requestParams);
+
+                    source.setLastSuccessUpdate(to.plusNanos(MILLISECOND_IN_NANOS));
+                    source.setLastUpdateError(null);
+                    sourceRepository.save(source);
                 } catch (Exception e) {
                     log.error("Process of updating logs finished with exception", e);
-                    graylogSource.setLastUpdateError(e.toString());
-                    sourceRepository.save(graylogSource);
+                    source.setLastUpdateError(e.toString());
+                    sourceRepository.save(source);
                 }
             }
         } finally {
@@ -99,135 +108,82 @@ public class GraylogLogHandler {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void processSource(GraylogSource source, String searchUrl, Map<String, String> requestParams, LocalDateTime to) {
+    private LocalDateTime selectToDateAccordingToTheLimit(String searchUrl,
+                                                          Map<String, String> requestParams,
+                                                          ZoneId sourceTimezone,
+                                                          LocalDateTime from) {
         SearchApiProps searchApiProps = graylogProps.getSearchApiProps();
 
-        ZoneId sourceTimezone = ZoneId.of(source.getGraylogTimezone());
-        requestParams.put(searchApiProps.getUrlFromParam(), convertDateTimeInZone(source.getLastSuccessUpdate(), ZoneId.systemDefault(),
-                sourceTimezone).toString() + ZONE);
-        requestParams.put(searchApiProps.getUrlToParam(), convertDateTimeInZone(to, ZoneId.systemDefault(),
-                sourceTimezone).toString() + ZONE);
-        requestParams.put(searchApiProps.getUrlFilterParam(), String.format(searchApiProps.getUrlFilterPattern(), source.getGraylogUId()));
+        requestParams.put(searchApiProps.getUrlLimitParam(), String.valueOf(1));
 
-        int totalLogsAmount;
-        final int limit = searchApiProps.getUrlLimitValue();
-        int currOffset = -limit;
-        int logsAmount = 0;
+        LocalDateTime currToDate = LocalDateTime.now();
+        while (currToDate.isAfter(from)) {
+            requestParams.put(searchApiProps.getUrlToParam(), convertDateTimeInZone(currToDate, ZoneId.systemDefault(), sourceTimezone)
+                    .toString() + ZONE);
 
-        List<Log> toSaveLogs = new ArrayList<>();
-        do {
-            currOffset += limit;
+            GraylogResponseWrapper responseWrapper = restTemplate.get(searchUrl, GraylogResponseWrapper.class, requestParams);
+            if (responseWrapper.getTotalAmount() <= searchApiProps.getLimitPerDownload()) {
+                break;
+            }
 
-            requestParams.put(searchApiProps.getUrlLimitParam(), String.valueOf(limit));
-            requestParams.put(searchApiProps.getUrlOffsetParam(), String.valueOf(currOffset));
+            currToDate = getMiddleAverageForDates(from, currToDate);
+        }
 
-            GraylogResponseWrapper graylogResponseWrapper = restTemplate.get(searchUrl, GraylogResponseWrapper.class, requestParams);
-            totalLogsAmount = graylogResponseWrapper.getTotalAmount();
+        return currToDate;
+    }
 
-            processLogs(graylogResponseWrapper.getMessages()
-                            .stream()
-                            .map(GraylogMessageWrapper::getMessage)
-                            .collect(Collectors.toList()),
-                    source, sourceTimezone, toSaveLogs);
-            logsAmount += toSaveLogs.size();
-        } while (currOffset < totalLogsAmount);
+    private LocalDateTime getMiddleAverageForDates(LocalDateTime from, LocalDateTime to) {
+        long middleAverageInSeconds = (from.toEpochSecond(ZoneOffset.UTC) + to.toEpochSecond(ZoneOffset.UTC)) / 2;
+        return LocalDateTime.ofEpochSecond(middleAverageInSeconds, MILLISECOND_IN_NANOS, ZoneOffset.UTC);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void processSource(GraylogSource source, String searchUrl, Map<String, String> requestParams) {
+        GraylogResponseWrapper graylogResponseWrapper = restTemplate.get(searchUrl, GraylogResponseWrapper.class, requestParams);
+        Set<LogDefinition> logDefinitions = graylogParser.parseDefinitions(graylogResponseWrapper);
+
+        int logsAmount = processDefinitions(logDefinitions, source, ZoneId.of(source.getGraylogTimezone()));
 
         log.info("{} logs for source {} is going to save", logsAmount, source.getName());
     }
 
-    private void processLogs(List<GraylogMessage> logsFromGraylog,
-                             GraylogSource source,
-                             ZoneId sourceTimezone,
-                             List<Log> toSaveLogs) {
-        for (GraylogMessage logFromGraylog : logsFromGraylog) {
-            String logMarker;
-            final String currMsg = logFromGraylog.getMessage();
+    private int processDefinitions(Set<LogDefinition> logDefinitions,
+                                   GraylogSource source,
+                                   ZoneId sourceTimezone) {
+        int logsAmount = 0;
 
-            if (currMsg.startsWith(LoggingConstants.START_ACTION)) {
-                logMarker = LoggingConstants.START_ACTION;
-            } else if (currMsg.startsWith(LoggingConstants.FINISH_ACTION)) {
-                logMarker = LoggingConstants.FINISH_ACTION;
-            } else if (currMsg.startsWith(LoggingConstants.EXCEPTION_IN_ACTION)) {
-                logMarker = LoggingConstants.EXCEPTION_IN_ACTION;
-            } else if (currMsg.startsWith(LoggingConstants.START_EXTERNAL_ACTION)) {
-                logMarker = LoggingConstants.START_EXTERNAL_ACTION;
-            } else if (currMsg.startsWith(LoggingConstants.FINISH_EXTERNAL_ACTION)) {
-                logMarker = LoggingConstants.FINISH_EXTERNAL_ACTION;
-            } else {
-                continue;
-            }
-
-            final Matcher actionMatcher = ACTION_PATTERN.matcher(currMsg.substring(logMarker.length()));
-            String actionName = null;
-            if (actionMatcher.find()) {
-                actionName = actionMatcher.group();
-            }
-
-            Matcher payloadMatcher = PAYLOAD_PATTERN.matcher(currMsg);
-            String payloadName = null;
-            if (payloadMatcher.find()) {
-                payloadName = payloadMatcher.group();
-            }
-
-            Matcher patientMatcher = PATIENT_PATTERN.matcher(currMsg);
-            Long patientId = null;
-            if (patientMatcher.find()) {
-                try {
-                    patientId = Long.parseUnsignedLong(patientMatcher.group());
-                } catch (NumberFormatException e) {
-                    log.warn("Couldn't parse patient in log {}", currMsg);
-                }
-            }
-            if (patientId == null) {
-                continue;
-            }
-
-            if (actionName != null
-                    && (currMsg.startsWith(LoggingConstants.START_ACTION)
-                    || currMsg.startsWith(LoggingConstants.FINISH_ACTION)
-                    || currMsg.startsWith(LoggingConstants.EXCEPTION_IN_ACTION))) {
-                Log newLog = new Log();
-                newLog.setRoot(logRootRepository.findTopByPatientAndEndDateIsNullOrderByStartDateDesc(patientId));
-
-                newLog.setActionName(actionName);
-                newLog.setDescription(currMsg);
-                newLog.setTimestamp(convertDateTimeInZone(logFromGraylog.getTimestamp(), sourceTimezone, ZoneId.systemDefault()));
-                newLog.setMarker(defineLogMarker(logMarker));
-
-                if (newLog.getRoot() == null && newLog.getMarker() == LogMarker.FINISH) {
-                    LogRoot logRoot = logRootRepository.findTopByPatientAndEndDateIsNotNullOrderByStartDateDesc(patientId);
-                    if (newLog.getTimestamp().equals(logRoot.getEndDate())) {
-                        newLog.setRoot(logRoot);
-                    }
-                }
-
-                toSaveLogs.add(newLog);
-            } else if (payloadName != null && currMsg.startsWith(LoggingConstants.START_EXTERNAL_ACTION)) {
+        for (LogDefinition logDefinition : logDefinitions) {
+            if (logDefinition.getMarker() == LogMarker.START_EXT) {
                 LogRoot newLogRoot = new LogRoot();
 
                 newLogRoot.setSource(source);
-                newLogRoot.setPayloadName(payloadName);
-                newLogRoot.setDescription(currMsg);
-                newLogRoot.setPatient(patientId);
-                newLogRoot.setStartDate(convertDateTimeInZone(logFromGraylog.getTimestamp(), sourceTimezone, ZoneId.systemDefault()));
+                newLogRoot.setPayloadName(logDefinition.getPayloadName());
+                newLogRoot.setDescription(logDefinition.getDescription());
+                newLogRoot.setPatient(logDefinition.getPatientId());
+                newLogRoot.setStartDate(convertDateTimeInZone(logDefinition.getTimestamp(), sourceTimezone, ZoneId.systemDefault()));
 
                 logRootRepository.save(newLogRoot);
-            } else if (currMsg.startsWith(LoggingConstants.FINISH_EXTERNAL_ACTION)) {
-                LogRoot currLogRoot = logRootRepository.findTopByPatientAndEndDateIsNullOrderByStartDateDesc(patientId);
-                currLogRoot.setEndDate(convertDateTimeInZone(logFromGraylog.getTimestamp(), sourceTimezone, ZoneId.systemDefault()));
+            } else if (logDefinition.getMarker() == LogMarker.START || logDefinition.getMarker() == LogMarker.FINISH
+                    || logDefinition.getMarker() == LogMarker.EXCEPTION) {
+                Log newLog = new Log();
+                newLog.setRoot(logRootRepository.findTopByPatientAndEndDateIsNullOrderByStartDateDesc(logDefinition.getPatientId()));
 
-                for (Log toSaveLog : toSaveLogs) {
-                    if (toSaveLog.getRoot() == null) {
-                        toSaveLog.setRoot(currLogRoot);
-                    }
-                }
+                newLog.setMarker(logDefinition.getMarker());
+                newLog.setActionName(logDefinition.getActionName());
+                newLog.setDescription(logDefinition.getDescription());
+                newLog.setTimestamp(convertDateTimeInZone(logDefinition.getTimestamp(), sourceTimezone, ZoneId.systemDefault()));
 
-                logRepository.saveAll(toSaveLogs);
-                logRootRepository.save(currLogRoot);
-                toSaveLogs.clear();
+                logRepository.save(newLog);
+                logsAmount++;
+            } else if (logDefinition.getMarker() == LogMarker.FINISH_EXT) {
+                LogRoot existingLogRoot = logRootRepository.findTopByPatientAndEndDateIsNullOrderByStartDateDesc(logDefinition.getPatientId());
+                existingLogRoot.setEndDate(convertDateTimeInZone(logDefinition.getTimestamp(), sourceTimezone, ZoneId.systemDefault()));
+
+                logRootRepository.save(existingLogRoot);
             }
         }
+
+        return logsAmount;
     }
 
     private String prepareQueryString() {
@@ -244,18 +200,5 @@ public class GraylogLogHandler {
         return ZonedDateTime.of(current, fromZone)
                 .withZoneSameInstant(toZone)
                 .toLocalDateTime();
-    }
-
-    private LogMarker defineLogMarker(String source) {
-        switch (source) {
-            case LoggingConstants.START_ACTION:
-                return LogMarker.START;
-            case LoggingConstants.EXCEPTION_IN_ACTION:
-                return LogMarker.EXCEPTION;
-            case LoggingConstants.FINISH_ACTION:
-                return LogMarker.FINISH;
-            default:
-                throw new IllegalArgumentException("Unknown log marker");
-        }
     }
 }

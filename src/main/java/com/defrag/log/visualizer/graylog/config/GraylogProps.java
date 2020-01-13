@@ -51,7 +51,7 @@ public class GraylogProps {
 
         private String urlFilterPattern;
         private String urlSortPattern;
-        private int urlLimitValue;
+        private int limitPerDownload;
         private String urlSortValue;
     }
 }

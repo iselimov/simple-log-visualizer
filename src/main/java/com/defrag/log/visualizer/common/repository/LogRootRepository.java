@@ -14,8 +14,6 @@ public interface LogRootRepository extends JpaRepository<LogRoot, Long> {
 
     LogRoot findTopByPatientAndEndDateIsNullOrderByStartDateDesc(long patientId);
 
-    LogRoot findTopByPatientAndEndDateIsNotNullOrderByStartDateDesc(long patientId);
-
     @Modifying
     @Query("delete from LogRoot lr where lr.updateDate < ?1")
     void deleteAllByUpdateDateBefore(LocalDateTime expiredDate);
