@@ -41,5 +41,5 @@ graylog:
 
     url-filter-pattern: streams:%s
     url-sort-pattern: timestamp:%s
-    url-limit-value: 1000
+    limit-per-download: 9900
     url-sort-value: asc
