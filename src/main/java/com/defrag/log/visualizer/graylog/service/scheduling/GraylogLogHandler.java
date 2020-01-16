@@ -14,6 +14,7 @@ import com.defrag.log.visualizer.graylog.repository.model.GraylogSource;
 import com.defrag.log.visualizer.graylog.service.parsing.GraylogParser;
 import com.defrag.log.visualizer.graylog.service.parsing.model.GraylogResponseWrapper;
 import com.defrag.log.visualizer.graylog.service.parsing.model.LogDefinition;
+import com.defrag.log.visualizer.graylog.service.utils.UrlComposer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,11 +26,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.defrag.log.visualizer.graylog.service.utils.DateTimeUtils.convertDateTimeInZone;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +49,8 @@ public class GraylogLogHandler {
     private final LogRepository logRepository;
 
     private final GraylogProps graylogProps;
+    private final UrlComposer urlComposer;
+
     private final GraylogRestTemplate restTemplate;
 
     private final GraylogSourceHandler sourceHandler;
@@ -71,7 +75,7 @@ public class GraylogLogHandler {
         requestParams.put(searchApiProps.getUrlQueryParam(), prepareQueryString());
         requestParams.put(searchApiProps.getUrlSortParam(), String.format(searchApiProps.getUrlSortPattern(),
                 searchApiProps.getUrlSortValue()));
-        String searchUrl = graylogProps.getCommonApiProps().getApiHost() + searchApiProps.getUrl();
+        String searchUrl = urlComposer.composeApiResourceUrl(searchApiProps.getUrl());
 
         try {
             for (GraylogSource source : sourceRepository.findAll()) {
@@ -194,11 +198,5 @@ public class GraylogLogHandler {
                         "NOT \"DefaultTemplateEditor\" ", LoggingConstants.START_ACTION,
                 LoggingConstants.EXCEPTION_IN_ACTION, LoggingConstants.FINISH_ACTION, LoggingConstants.START_EXTERNAL_ACTION,
                 LoggingConstants.FINISH_EXTERNAL_ACTION);
-    }
-
-    private LocalDateTime convertDateTimeInZone(LocalDateTime current, ZoneId fromZone, ZoneId toZone) {
-        return ZonedDateTime.of(current, fromZone)
-                .withZoneSameInstant(toZone)
-                .toLocalDateTime();
     }
 }

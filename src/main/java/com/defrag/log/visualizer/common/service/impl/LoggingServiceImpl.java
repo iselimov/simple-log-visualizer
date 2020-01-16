@@ -47,12 +47,12 @@ public class LoggingServiceImpl implements LoggingService {
         }
 
         final LogRoot logRoot = logs.get(0).getRoot();
-        final LogNode root = LogNode.createNode(logRoot.getPayloadName(), logRoot.getDescription(), logRoot.getStartDate());
+        final LogNode root = LogNode.createRootNode(logRoot.getId(), logRoot.getPayloadName(), logRoot.getDescription(), logRoot.getStartDate());
 
         LogNode lastNode = root;
         for (Log log : logs) {
             if (log.getMarker() == START) {
-                LogNode nextNode = LogNode.createNode(log.getActionName(), log.getDescription(), log.getTimestamp());
+                LogNode nextNode = LogNode.createNode(log.getId(), log.getActionName(), log.getDescription(), log.getTimestamp());
                 lastNode.addChild(nextNode);
                 lastNode = nextNode;
             } else if (log.getMarker() == FINISH) {
@@ -61,7 +61,7 @@ public class LoggingServiceImpl implements LoggingService {
                     lastNode = lastNode.getParent();
                 }
             } else if (log.getMarker() == EXCEPTION) {
-                LogNode errNode = LogNode.createErrorNode(log.getActionName(), log.getDescription(), log.getTimestamp());
+                LogNode errNode = LogNode.createErrorNode(log.getId(), log.getActionName(), log.getDescription(), log.getTimestamp());
                 lastNode.addChild(errNode);
                 break;
             } else {

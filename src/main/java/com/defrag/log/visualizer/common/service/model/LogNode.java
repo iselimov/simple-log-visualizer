@@ -15,6 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class LogNode {
 
+    private final long id;
     private final String name;
     private final LocalDateTime startDate;
     @Setter(AccessLevel.PRIVATE)
@@ -22,20 +23,28 @@ public class LogNode {
 
     private String description;
     private String exception;
+    private boolean rootNode;
 
     @Setter(AccessLevel.PRIVATE)
     @JsonIgnore
     private LogNode parent;
     private List<LogNode> children = new ArrayList<>();
 
-    public static LogNode createNode(String name, String description, LocalDateTime startDate) {
-        LogNode logNode = new LogNode(name, startDate);
+    public static LogNode createRootNode(long id, String name, String description, LocalDateTime startDate) {
+        LogNode logNode = new LogNode(id, name, startDate);
+        logNode.setDescription(description);
+        logNode.setRootNode(true);
+        return logNode;
+    }
+
+    public static LogNode createNode(long id, String name, String description, LocalDateTime startDate) {
+        LogNode logNode = new LogNode(id, name, startDate);
         logNode.setDescription(description);
         return logNode;
     }
 
-    public static LogNode createErrorNode(String name, String exception, LocalDateTime startDate) {
-        LogNode errNode = new LogNode(name, startDate);
+    public static LogNode createErrorNode(long id, String name, String exception, LocalDateTime startDate) {
+        LogNode errNode = new LogNode(id, name, startDate);
         errNode.setException(exception);
         return errNode;
     }

@@ -1,5 +1,9 @@
-var restApiUrl = 'http://localhost:8084/logs/root/';
+
+
+var logRestApiUrl = 'http://localhost:8084/logs/root/';
+var graylogRestApiUrl = 'http://localhost:8084/graylog/';
 var logRootId = new URL(window.location).searchParams.get('logRootId');
+var log;
 
 var widthSize = 600;
 var nodesAmountPerWidth = 3;
@@ -7,7 +11,7 @@ var nodesAmountPerWidth = 3;
 var heightSize = 400;
 var nodesAmountPerHeight = 12;
 
-$.get(restApiUrl + logRootId + '/hierarchy', function ok(logsHierarchy) {
+$.get(logRestApiUrl + logRootId + '/hierarchy', function ok(logsHierarchy) {
 
     var fullWidth = Math.ceil(logsHierarchy.depth / nodesAmountPerWidth) * widthSize;
     var fullHeight = Math.ceil(logsHierarchy.breadth / nodesAmountPerHeight) * heightSize;
@@ -74,6 +78,11 @@ $.get(restApiUrl + logRootId + '/hierarchy', function ok(logsHierarchy) {
 
             $("#startDate")[0].innerText = 'Start date: ' + res.startDate;
             $("#endDate")[0].innerText = 'End date: ' + res.endDate;
+
+            log = null;
+            if (!res.rootNode) {
+                log = res;
+            }
 
             // x grows from top to bottom, y grows from left to right
             $("#logSummary")[0].style.marginLeft = Math.ceil(res.y) + 'px';
@@ -151,3 +160,23 @@ $.get(restApiUrl + logRootId + '/hierarchy', function ok(logsHierarchy) {
         alert('Something got wrong: ' + response);
     }
 });
+
+function showInGraylog() {
+    var url;
+    if (log) {
+        url = graylogRestApiUrl + log.id + '/query?from=' + log.startDate  + '&to=' + log.endDate;
+    } else {
+        url = graylogRestApiUrl + 'root/' + logRootId + '/query';
+    }
+
+    $.get(url, function ok(filterQueryUrl) {
+        window.open(filterQueryUrl);
+    }).fail(function error(resp) {
+        var response = resp && resp.responseJSON;
+        if (response && response.message && response.status) {
+            alert('Error was caused: ' + response.message + ', status = ' + response.status);
+        } else {
+            alert('Something got wrong: ' + response);
+        }
+    });
+}

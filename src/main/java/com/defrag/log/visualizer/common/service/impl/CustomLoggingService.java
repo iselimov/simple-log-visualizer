@@ -14,4 +14,8 @@ public interface CustomLoggingService {
     List<LogRoot> getRoots(long sourceId, LocalDateTime from, LocalDateTime to);
 
     List<Log> getLogs(long rootId);
+
+    String getGraylogQueryForLogRoot(long logRootId);
+
+    String getGraylogQueryForLog(long logId, LocalDateTime from, LocalDateTime to);
 }

@@ -19,6 +19,7 @@ public class GraylogProps {
     @Setter
     public static class CommonProps {
         private int expiredLogsDays;
+        private String url;
     }
 
     @Getter

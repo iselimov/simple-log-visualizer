@@ -1,6 +1,7 @@
 package com.defrag.log.visualizer.graylog.http;
 
 import com.defrag.log.visualizer.graylog.config.GraylogProps;
+import com.defrag.log.visualizer.graylog.service.utils.UrlComposer;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.http.*;
@@ -22,7 +23,9 @@ public class GraylogRestTemplate {
     private static final String SESSION_PATTERN = "%s:session";
 
     private final RestTemplate restTemplate;
-    private final GraylogProps applicationProperties;
+
+    private final GraylogProps graylogProps;
+    private final UrlComposer urlComposer;
 
     private GraylogSession lastSession;
 
@@ -57,9 +60,9 @@ public class GraylogRestTemplate {
             return lastSession.getId();
         }
 
-        final GraylogProps.AuthProps authProps = applicationProperties.getAuthProps();
-        final GraylogProps.CommonApiProps apiProps = applicationProperties.getCommonApiProps();
-        lastSession = restTemplate.exchange(RequestEntity.post(URI.create(apiProps.getApiHost() + apiProps.getSessionUrl()))
+        final GraylogProps.AuthProps authProps = graylogProps.getAuthProps();
+        final GraylogProps.CommonApiProps apiProps = graylogProps.getCommonApiProps();
+        lastSession = restTemplate.exchange(RequestEntity.post(URI.create(urlComposer.composeApiResourceUrl(apiProps.getSessionUrl())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(new GraylogSessionRequest(authProps.getUserName(), authProps.getPassword())), GraylogSession.class)
                 .getBody();

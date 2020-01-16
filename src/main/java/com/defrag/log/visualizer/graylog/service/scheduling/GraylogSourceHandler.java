@@ -7,6 +7,7 @@ import com.defrag.log.visualizer.graylog.repository.model.GraylogSource;
 import com.defrag.log.visualizer.graylog.service.scheduling.model.GraylogCluster;
 import com.defrag.log.visualizer.graylog.service.scheduling.model.GraylogStream;
 import com.defrag.log.visualizer.graylog.service.scheduling.model.GraylogStreamWrapper;
+import com.defrag.log.visualizer.graylog.service.utils.UrlComposer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -25,6 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class GraylogSourceHandler {
 
     private final GraylogProps graylogProps;
+    private final UrlComposer urlComposer;
     private final GraylogRestTemplate restTemplate;
     private final GraylogSourceRepository sourceRepository;
 
@@ -58,7 +60,7 @@ public class GraylogSourceHandler {
     private String getTimezone() {
         GraylogProps.CommonApiProps apiProps = graylogProps.getCommonApiProps();
 
-        GraylogCluster graylogCluster = restTemplate.get(apiProps.getApiHost() + apiProps.getSystemUrl(), GraylogCluster.class);
+        GraylogCluster graylogCluster = restTemplate.get(urlComposer.composeApiResourceUrl(apiProps.getSystemUrl()), GraylogCluster.class);
         if (graylogCluster == null) {
             return null;
         }
@@ -68,7 +70,7 @@ public class GraylogSourceHandler {
     private Set<GraylogStream> getStreams() {
         GraylogProps.CommonApiProps apiProps = graylogProps.getCommonApiProps();
 
-        GraylogStreamWrapper graylogResponse = restTemplate.get(apiProps.getApiHost() + apiProps.getStreamsUrl(), GraylogStreamWrapper.class);
+        GraylogStreamWrapper graylogResponse = restTemplate.get(urlComposer.composeApiResourceUrl(apiProps.getStreamsUrl()), GraylogStreamWrapper.class);
         if (graylogResponse == null) {
             return Collections.emptySet();
         }

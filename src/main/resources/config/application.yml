@@ -21,11 +21,12 @@ spring:
 graylog:
   common-props:
     expired-logs-days: 2
+    url:
   auth-props:
     user-name:
     password:
   common-api-props:
-    api-host:
+    api-host: /api
     session-url: /system/sessions
     system-url: /system
     streams-url: /streams
