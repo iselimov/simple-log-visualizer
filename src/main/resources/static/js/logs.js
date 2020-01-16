@@ -164,7 +164,10 @@ $.get(logRestApiUrl + logRootId + '/hierarchy', function ok(logsHierarchy) {
 function showInGraylog() {
     var url;
     if (log) {
-        url = graylogRestApiUrl + log.id + '/query?from=' + log.startDate  + '&to=' + log.endDate;
+        url = graylogRestApiUrl + log.id + '/query?from=' + log.startDate;
+        if (log.endDate) {
+            url += '&to=' + log.endDate;
+        }
     } else {
         url = graylogRestApiUrl + 'root/' + logRootId + '/query';
     }

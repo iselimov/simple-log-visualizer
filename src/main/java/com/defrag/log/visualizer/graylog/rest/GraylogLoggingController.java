@@ -27,7 +27,7 @@ public class GraylogLoggingController {
                                         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
                                         @RequestParam LocalDateTime from,
                                         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-                                        @RequestParam LocalDateTime to) {
+                                        @RequestParam(required = false) LocalDateTime to) {
         return service.getGraylogQueryForLog(logId, from, to);
     }
 }

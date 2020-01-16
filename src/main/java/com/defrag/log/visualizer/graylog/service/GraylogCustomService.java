@@ -66,7 +66,11 @@ public class GraylogCustomService implements CustomLoggingService {
         String graylogTimezone = graylogSource.getGraylogTimezone();
 
         LocalDateTime fromInSourceTimezone = convertDateTimeInZone(logRoot.getStartDate(), ZoneId.systemDefault(), ZoneId.of(graylogTimezone));
-        LocalDateTime toInSourceTimezone = convertDateTimeInZone(logRoot.getEndDate(), ZoneId.systemDefault(), ZoneId.of(graylogTimezone));
+        LocalDateTime to = logRoot.getEndDate();
+        if (to == null) {
+            to = LocalDateTime.of(2222, 1, 1, 1, 1, 1, 100_000_000);
+        }
+        LocalDateTime toInSourceTimezone = convertDateTimeInZone(to, ZoneId.systemDefault(), ZoneId.of(graylogTimezone));
 
         return composeFilterQuery(graylogSource.getGraylogUId(), fromInSourceTimezone, toInSourceTimezone);
     }
@@ -82,16 +86,15 @@ public class GraylogCustomService implements CustomLoggingService {
         String graylogTimezone = graylogSource.getGraylogTimezone();
 
         LocalDateTime fromInSourceTimezone = convertDateTimeInZone(from, ZoneId.systemDefault(), ZoneId.of(graylogTimezone));
+        if (to == null) {
+            to = LocalDateTime.of(2222, 1, 1, 1, 1, 1, 100_000_000);
+        }
         LocalDateTime toInSourceTimezone = convertDateTimeInZone(to, ZoneId.systemDefault(), ZoneId.of(graylogTimezone));
 
         return composeFilterQuery(graylogSource.getGraylogUId(), fromInSourceTimezone, toInSourceTimezone);
     }
 
     private String composeFilterQuery(String sourceUid, LocalDateTime from, LocalDateTime to) {
-        if (to == null) {
-            to = LocalDateTime.of(2222, 1, 1, 0, 0);
-        }
-
         return String.format("%s/%s/search?sortOrder=asc&sortField=timestamp&relative=%d&q=timestamp: [\"%s %s\" TO \"%s %s\"]",
                 urlComposer.composeResourceUrl(graylogProps.getCommonApiProps().getStreamsUrl()), sourceUid, 0,
                 from.toLocalDate().toString(), from.toLocalTime().toString(), to.toLocalDate().toString(), to.toLocalTime().toString());
