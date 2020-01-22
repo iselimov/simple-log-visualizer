@@ -44,10 +44,10 @@ public class LogDefinition implements Comparable<LogDefinition> {
             return 1;
         }
 
-        if (marker == LogMarker.START && other.getMarker() == LogMarker.START) {
-            throw new IllegalArgumentException(String.format("Two actions %s, %s with the same start date were found!",
-                    this, other));
-        }
+//        if (marker == LogMarker.START && other.getMarker() == LogMarker.START) {
+//            throw new IllegalArgumentException(String.format("Two actions %s, %s with the same start date were found!",
+//                    this, other));
+//        }
         if (marker == LogMarker.START || other.getMarker() == LogMarker.FINISH) {
             return -1;
         } else {
