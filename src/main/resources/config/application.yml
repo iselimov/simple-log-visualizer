@@ -44,3 +44,6 @@ graylog:
     url-sort-pattern: timestamp:%s
     limit-per-download: 9900
     url-sort-value: asc
+  optional-props:
+    only-stream-names:
+      - some-name

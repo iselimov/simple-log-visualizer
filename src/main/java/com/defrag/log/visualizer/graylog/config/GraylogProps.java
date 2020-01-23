@@ -5,6 +5,8 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 @ConfigurationProperties(prefix = "graylog", ignoreUnknownFields = false)
 @Getter
@@ -14,6 +16,7 @@ public class GraylogProps {
     private final AuthProps authProps = new AuthProps();
     private final CommonApiProps commonApiProps = new CommonApiProps();
     private final SearchApiProps searchApiProps = new SearchApiProps();
+    private final OptionalProps optionalProps = new OptionalProps();
 
     @Getter
     @Setter
@@ -54,5 +57,11 @@ public class GraylogProps {
         private String urlSortPattern;
         private int limitPerDownload;
         private String urlSortValue;
+    }
+
+    @Getter
+    @Setter
+    public static class OptionalProps {
+        private List<String> onlyStreamNames;
     }
 }
