@@ -17,8 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -73,6 +75,12 @@ public class GraylogSourceHandler {
         GraylogStreamWrapper graylogResponse = restTemplate.get(urlComposer.composeApiResourceUrl(apiProps.getStreamsUrl()), GraylogStreamWrapper.class);
         if (graylogResponse == null) {
             return Collections.emptySet();
+        }
+        List<String> propertyStreamNames = graylogProps.getOptionalProps().getOnlyStreamNames();
+        if (!propertyStreamNames.isEmpty()) {
+            return graylogResponse.getStreams().stream()
+                    .filter(graylogStream -> propertyStreamNames.contains(graylogStream.getName()))
+                    .collect(Collectors.toSet());
         }
         return graylogResponse.getStreams();
     }
