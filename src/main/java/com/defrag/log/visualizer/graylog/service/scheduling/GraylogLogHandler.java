@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.defrag.log.visualizer.graylog.service.utils.DateTimeUtils.convertDateTimeInZone;
+import static com.defrag.log.visualizer.graylog.service.utils.DateTimeUtils.toStr;
 
 @Service
 @RequiredArgsConstructor
@@ -83,15 +84,15 @@ public class GraylogLogHandler {
                     ZoneId sourceTimezone = ZoneId.of(source.getGraylogTimezone());
                     LocalDateTime from = source.getLastSuccessUpdate();
 
-                    requestParams.put(searchApiProps.getUrlFromParam(), convertDateTimeInZone(from, ZoneId.systemDefault(),
-                            sourceTimezone).toString() + ZONE);
+                    requestParams.put(searchApiProps.getUrlFromParam(), toStr(convertDateTimeInZone(from, ZoneId.systemDefault(),
+                            sourceTimezone)) + ZONE);
                     requestParams.put(searchApiProps.getUrlFilterParam(), String.format(searchApiProps.getUrlFilterPattern(),
                             source.getGraylogUId()));
 
                     LocalDateTime to = selectToDateAccordingToTheLimit(searchUrl, requestParams, sourceTimezone, from);
 
-                    requestParams.put(searchApiProps.getUrlToParam(), convertDateTimeInZone(to, ZoneId.systemDefault(), sourceTimezone)
-                            .toString() + ZONE);
+                    requestParams.put(searchApiProps.getUrlToParam(), toStr(convertDateTimeInZone(to, ZoneId.systemDefault(),
+                            sourceTimezone)) + ZONE);
                     requestParams.put(searchApiProps.getUrlLimitParam(), String.valueOf(searchApiProps.getLimitPerDownload()));
 
                     log.info("Processing source {} for the period [{}, {}]", source.getName(), from, to);
@@ -122,8 +123,8 @@ public class GraylogLogHandler {
 
         LocalDateTime currToDate = LocalDateTime.now();
         while (currToDate.isAfter(from)) {
-            requestParams.put(searchApiProps.getUrlToParam(), convertDateTimeInZone(currToDate, ZoneId.systemDefault(), sourceTimezone)
-                    .toString() + ZONE);
+            requestParams.put(searchApiProps.getUrlToParam(), toStr(convertDateTimeInZone(currToDate, ZoneId.systemDefault(),
+                    sourceTimezone)) + ZONE);
 
             GraylogResponseWrapper responseWrapper = restTemplate.get(searchUrl, GraylogResponseWrapper.class, requestParams);
             if (responseWrapper.getTotalAmount() <= searchApiProps.getLimitPerDownload()) {

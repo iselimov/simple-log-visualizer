@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.defrag.log.visualizer.graylog.service.utils.DateTimeUtils.convertDateTimeInZone;
+import static com.defrag.log.visualizer.graylog.service.utils.DateTimeUtils.toStr;
 
 @Service
 @RequiredArgsConstructor
@@ -97,6 +98,6 @@ public class GraylogCustomService implements CustomLoggingService {
     private String composeFilterQuery(String sourceUid, LocalDateTime from, LocalDateTime to) {
         return String.format("%s/%s/search?sortOrder=asc&sortField=timestamp&relative=%d&q=timestamp: [\"%s %s\" TO \"%s %s\"]",
                 urlComposer.composeResourceUrl(graylogProps.getCommonApiProps().getStreamsUrl()), sourceUid, 0,
-                from.toLocalDate().toString(), from.toLocalTime().toString(), to.toLocalDate().toString(), to.toLocalTime().toString());
+                from.toLocalDate().toString(), toStr(from.toLocalTime()), to.toLocalDate().toString(), toStr(to.toLocalTime()));
     }
 }
