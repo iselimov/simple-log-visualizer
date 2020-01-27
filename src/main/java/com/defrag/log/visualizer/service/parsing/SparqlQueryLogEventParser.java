@@ -5,16 +5,19 @@ import com.defrag.log.visualizer.service.parsing.graylog.model.LogDefinition;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 import static com.defrag.log.visualizer.service.parsing.LoggingConstants.DEPTH;
 import static com.defrag.log.visualizer.service.parsing.LoggingConstants.TIMING;
 import static com.defrag.log.visualizer.service.parsing.utils.ParserUtils.positionAfterString;
 
 @Service
 @Slf4j
-public class SparqlQueryLogEventParser implements LogEventParser {
+class SparqlQueryLogEventParser implements LogEventParser {
     @Override
-    public LogEventType eventType() {
-        return LogEventType.SPARQL_QUERY;
+    public Set<LogEventType> eventTypes() {
+        return EnumSet.of(LogEventType.SPARQL_QUERY);
     }
 
     @Override

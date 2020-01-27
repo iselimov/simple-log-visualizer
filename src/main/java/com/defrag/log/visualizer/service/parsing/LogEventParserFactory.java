@@ -15,7 +15,7 @@ class LogEventParserFactory {
     LogEventParser getParser(LogEventType logEventType) {
         return logEventParsers
                 .stream()
-                .filter(p -> p.eventType() == logEventType)
+                .filter(p -> p.eventTypes().contains(logEventType))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(String.format("Could't find parser for %s", logEventType)));
     }

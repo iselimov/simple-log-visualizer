@@ -5,16 +5,19 @@ import com.defrag.log.visualizer.service.parsing.graylog.model.LogDefinition;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 import static com.defrag.log.visualizer.service.parsing.LoggingConstants.*;
 import static com.defrag.log.visualizer.service.parsing.utils.ParserUtils.positionAfterString;
 
 @Service
 @Slf4j
-public class ErrorLogEventParser implements LogEventParser {
+class ErrorLogEventParser implements LogEventParser {
 
     @Override
-    public LogEventType eventType() {
-        return LogEventType.ACTION_ERROR;
+    public Set<LogEventType> eventTypes() {
+        return EnumSet.of(LogEventType.ACTION_ERROR);
     }
 
     @Override
@@ -24,12 +27,14 @@ public class ErrorLogEventParser implements LogEventParser {
 
         int ioPrefixInd = parsingMessage.indexOf(INVOCATION_ORDER, nextInd);
         if (ioPrefixInd == -1) {
+            log.error("Invocation order was not found in {}", parsingMessage);
             return;
         }
         nextInd = ioPrefixInd;
 
         int nameInd = parsingMessage.indexOf(NAME, nextInd);
         if (nameInd == -1) {
+            log.error("Name was not found in {}", parsingMessage);
             return;
         }
         nextInd = nameInd;
@@ -44,6 +49,7 @@ public class ErrorLogEventParser implements LogEventParser {
 
         int exceptionInd = parsingMessage.indexOf(EXCEPTION, nextInd);
         if (exceptionInd == -1) {
+            log.error("Exception was not found in {}", parsingMessage);
             return;
         }
 

@@ -5,6 +5,8 @@ import com.defrag.log.visualizer.service.parsing.graylog.model.LogDefinition;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,8 +20,8 @@ class StartLogEventParser implements LogEventParser {
     private static final Pattern PATIENT_PATTERN = Pattern.compile("(?<=PAT)\\d+");
 
     @Override
-    public LogEventType eventType() {
-        return LogEventType.ACTION_START;
+    public Set<LogEventType> eventTypes() {
+        return EnumSet.of(LogEventType.ACTION_START);
     }
 
     @Override
@@ -29,12 +31,14 @@ class StartLogEventParser implements LogEventParser {
 
         int ioPrefixInd = parsingMessage.indexOf(INVOCATION_ORDER, nextInd);
         if (ioPrefixInd == -1) {
+            log.error("Invocation order was not found in {}", parsingMessage);
             return;
         }
         nextInd = ioPrefixInd;
 
         int depthPrefixInd = parsingMessage.indexOf(DEPTH, nextInd);
         if (depthPrefixInd == -1) {
+            log.error("Depth was not found in {}", parsingMessage);
             return;
         }
         nextInd = depthPrefixInd;
@@ -49,6 +53,7 @@ class StartLogEventParser implements LogEventParser {
 
         int nameInd = parsingMessage.indexOf(NAME, nextInd);
         if (nameInd == -1) {
+            log.error("Name was not found in {}", parsingMessage);
             return;
         }
         nextInd = nameInd;
@@ -63,6 +68,7 @@ class StartLogEventParser implements LogEventParser {
 
         int argsInd = parsingMessage.indexOf(ARGS, nextInd);
         if (argsInd == -1) {
+            log.error("Args was not found in {}", parsingMessage);
             return;
         }
 

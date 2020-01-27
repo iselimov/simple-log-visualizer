@@ -5,6 +5,9 @@ import com.defrag.log.visualizer.service.parsing.graylog.model.LogDefinition;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 import static com.defrag.log.visualizer.service.parsing.LoggingConstants.*;
 import static com.defrag.log.visualizer.service.parsing.utils.ParserUtils.positionAfterString;
 
@@ -13,8 +16,8 @@ import static com.defrag.log.visualizer.service.parsing.utils.ParserUtils.positi
 class EndLogEventParser implements LogEventParser {
 
     @Override
-    public LogEventType eventType() {
-        return LogEventType.ACTION_END;
+    public Set<LogEventType> eventTypes() {
+        return EnumSet.of(LogEventType.ACTION_END);
     }
 
     @Override
@@ -24,12 +27,14 @@ class EndLogEventParser implements LogEventParser {
 
         int ioPrefixInd = parsingMessage.indexOf(INVOCATION_ORDER, nextInd);
         if (ioPrefixInd == -1) {
+            log.error("Invocation order was not found in {}", parsingMessage);
             return;
         }
         nextInd = ioPrefixInd;
 
         int depthPrefixInd = parsingMessage.indexOf(DEPTH, nextInd);
         if (depthPrefixInd == -1) {
+            log.error("Depth was not found in {}", parsingMessage);
             return;
         }
         nextInd = depthPrefixInd;
@@ -44,6 +49,7 @@ class EndLogEventParser implements LogEventParser {
 
         int nameInd = parsingMessage.indexOf(NAME, nextInd);
         if (nameInd == -1) {
+            log.error("Name was not found in {}", parsingMessage);
             return;
         }
         nextInd = nameInd;
@@ -58,6 +64,7 @@ class EndLogEventParser implements LogEventParser {
 
         int timingInd = parsingMessage.indexOf(TIMING, nextInd);
         if (timingInd == -1) {
+            log.error("Timing was not found in {}", parsingMessage);
             return;
         }
 
