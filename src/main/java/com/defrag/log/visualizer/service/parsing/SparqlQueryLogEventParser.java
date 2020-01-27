@@ -5,16 +5,16 @@ import com.defrag.log.visualizer.service.parsing.graylog.model.LogDefinition;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import static com.defrag.log.visualizer.service.parsing.LoggingConstants.*;
+import static com.defrag.log.visualizer.service.parsing.LoggingConstants.DEPTH;
+import static com.defrag.log.visualizer.service.parsing.LoggingConstants.TIMING;
 import static com.defrag.log.visualizer.service.parsing.utils.ParserUtils.positionAfterString;
 
 @Service
 @Slf4j
-class EndLogEventParser implements LogEventParser {
-
+public class SparqlQueryLogEventParser implements LogEventParser {
     @Override
     public LogEventType eventType() {
-        return LogEventType.ACTION_END;
+        return LogEventType.SPARQL_QUERY;
     }
 
     @Override
@@ -22,47 +22,24 @@ class EndLogEventParser implements LogEventParser {
         int nextInd = 0;
         String parsingMessage = logBuilder.getFullMessage();
 
-        int ioPrefixInd = parsingMessage.indexOf(INVOCATION_ORDER, nextInd);
-        if (ioPrefixInd == -1) {
-            return;
-        }
-        nextInd = ioPrefixInd;
-
         int depthPrefixInd = parsingMessage.indexOf(DEPTH, nextInd);
         if (depthPrefixInd == -1) {
             return;
         }
         nextInd = depthPrefixInd;
 
-        String ioStr = parsingMessage.substring(positionAfterString(INVOCATION_ORDER, ioPrefixInd), depthPrefixInd).trim();
-        try {
-            logBuilder.invocationOrder(Integer.parseInt(ioStr));
-        } catch (NumberFormatException e) {
-            log.error("Couldn't parse invocation order {} in {}", ioStr, parsingMessage);
+        int timingInd = parsingMessage.indexOf(TIMING, nextInd);
+        if (timingInd == -1) {
             return;
         }
 
-        int nameInd = parsingMessage.indexOf(NAME, nextInd);
-        if (nameInd == -1) {
-            return;
-        }
-        nextInd = nameInd;
-
-        String depthStr = parsingMessage.substring(positionAfterString(DEPTH, depthPrefixInd), nameInd).trim();
+        String depthStr = parsingMessage.substring(positionAfterString(DEPTH, depthPrefixInd), timingInd).trim();
         try {
             logBuilder.depth(Integer.parseInt(depthStr));
         } catch (NumberFormatException e) {
             log.error("Couldn't parse depth {} in {}", depthStr, parsingMessage);
             return;
         }
-
-        int timingInd = parsingMessage.indexOf(TIMING, nextInd);
-        if (timingInd == -1) {
-            return;
-        }
-
-        String name = parsingMessage.substring(positionAfterString(NAME, nameInd), timingInd).trim();
-        logBuilder.actionName(name);
 
         String timingStr = parsingMessage.substring(positionAfterString(TIMING, timingInd)).trim();
         try {

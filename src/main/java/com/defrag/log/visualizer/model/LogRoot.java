@@ -27,34 +27,24 @@ public class LogRoot {
     @JoinColumn(name = "source")
     private GraylogSource source;
 
-    @Column(name = "payload_name")
-    private String payloadName;
+    @Column(name = "uid")
+    private String uid;
 
-    @Column(name = "description")
-    private String description;
+    @Column(name = "first_action_date")
+    private LocalDateTime firstActionDate;
 
-    @Column(name = "patient")
-    private Long patient;
+    @Column(name = "last_action_date")
+    private LocalDateTime lastActionDate;
 
-    @Column(name = "start_date")
-    private LocalDateTime startDate;
-
-    @Column(name = "end_date")
-    private LocalDateTime endDate;
-
-    @Column(name = "update_date")
+    @Column(name = "creation_date")
     @Setter(AccessLevel.PACKAGE)
-    private LocalDateTime updateDate;
+    private LocalDateTime creationDate;
 
-    @OneToMany(mappedBy = "root", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "root")
     private Set<Log> children = new HashSet<>();
 
     @PrePersist
     private void prePersist() {
-        changeUpdateDate();
-    }
-
-    public void changeUpdateDate() {
-        updateDate = LocalDateTime.now();
+        creationDate = LocalDateTime.now();
     }
 }

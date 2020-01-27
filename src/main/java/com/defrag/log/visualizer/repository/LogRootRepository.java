@@ -10,11 +10,11 @@ import java.util.List;
 
 public interface LogRootRepository extends JpaRepository<LogRoot, Long> {
 
-    List<LogRoot> findBySourceIdAndStartDateBetweenOrderByStartDateDesc(long sourceId, LocalDateTime from, LocalDateTime after);
+    List<LogRoot> findBySourceIdAndFirstActionDateBetweenOrderByFirstActionDateDesc(long sourceId, LocalDateTime from, LocalDateTime after);
 
-    LogRoot findTopByPatientAndEndDateIsNullOrderByStartDateDesc(long patientId);
+    LogRoot findByUid(String uid);
 
     @Modifying
-    @Query("delete from LogRoot lr where lr.updateDate < ?1")
+    @Query("delete from LogRoot lr where lr.getCreationDate < ?1")
     void deleteAllByUpdateDateBefore(LocalDateTime expiredDate);
 }

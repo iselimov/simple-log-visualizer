@@ -3,13 +3,11 @@ package com.defrag.log.visualizer.service.parsing.graylog.model;
 import com.defrag.log.visualizer.model.LogEventType;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
 @ToString
 public class LogDefinition {
     private final String uid;
@@ -19,9 +17,11 @@ public class LogDefinition {
     private final Long patientId;
     private final String actionName;
     private final String fullMessage;
-    private final Integer invocationOrder;
+    private final int invocationOrder;
     private final Integer depth;
+    private final Long timing;
     private final String args;
+    private final String exception;
 
     private LogDefinition(Builder builder) {
         uid = builder.uid;
@@ -30,9 +30,11 @@ public class LogDefinition {
         patientId = builder.patientId;
         actionName = builder.actionName;
         fullMessage = builder.fullMessage;
-        invocationOrder = builder.invocationOrder;
+        invocationOrder = builder.invocationOrder == null ? Integer.MAX_VALUE : builder.invocationOrder;
         depth = builder.depth;
+        timing = builder.timing;
         args = builder.args;
+        exception = builder.exception;
     }
 
     @RequiredArgsConstructor
@@ -47,7 +49,9 @@ public class LogDefinition {
         private String actionName;
         private Integer invocationOrder;
         private Integer depth;
+        private Long timing;
         private String args;
+        private String exception;
 
         public Builder patientId(Long patientId) {
             this.patientId = patientId;
@@ -69,8 +73,18 @@ public class LogDefinition {
             return this;
         }
 
+        public Builder timing(Long timing) {
+            this.timing = timing;
+            return this;
+        }
+
         public Builder args(String args) {
             this.args = args;
+            return this;
+        }
+
+        public Builder exception(String exception) {
+            this.exception = exception;
             return this;
         }
 

@@ -9,13 +9,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import static com.defrag.log.visualizer.service.LoggingConstants.ACTION;
-import static com.defrag.log.visualizer.service.LoggingConstants.UUID;
+import static com.defrag.log.visualizer.service.parsing.LoggingConstants.ACTION;
+import static com.defrag.log.visualizer.service.parsing.LoggingConstants.UUID;
 import static com.defrag.log.visualizer.service.parsing.utils.ParserUtils.positionAfterString;
 
 @Slf4j
@@ -25,17 +25,20 @@ public class GraylogParser {
 
     private final LogEventParserFactory parserFactory;
 
-    public Set<LogDefinition> parseDefinitions(GraylogResponseWrapper graylogResponseWrapper) {
+    public List<LogDefinition> parseDefinitions(GraylogResponseWrapper graylogResponseWrapper) {
         List<GraylogMessage> logsFromGraylog = graylogResponseWrapper.getMessages()
                 .stream()
                 .map(GraylogMessageWrapper::getMessage)
                 .collect(Collectors.toList());
 
-        return parseDefinitions(logsFromGraylog);
+        return parseDefinitions(logsFromGraylog)
+                .stream()
+                .sorted(Comparator.comparing(LogDefinition::getInvocationOrder))
+                .collect(Collectors.toList());
     }
 
-    private Set<LogDefinition> parseDefinitions(List<GraylogMessage> logsFromGraylog) {
-        Set<LogDefinition> logDefinitions = new TreeSet<>();
+    private List<LogDefinition> parseDefinitions(List<GraylogMessage> logsFromGraylog) {
+        List<LogDefinition> logDefinitions = new ArrayList<>();
 
         for (GraylogMessage logFromGraylog : logsFromGraylog) {
             String logMessage = logFromGraylog.getMessage();

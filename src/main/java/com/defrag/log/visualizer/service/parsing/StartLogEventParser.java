@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.defrag.log.visualizer.service.LoggingConstants.*;
+import static com.defrag.log.visualizer.service.parsing.LoggingConstants.*;
 import static com.defrag.log.visualizer.service.parsing.utils.ParserUtils.positionAfterString;
 
 @Service

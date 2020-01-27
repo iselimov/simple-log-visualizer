@@ -7,28 +7,30 @@ import org.junit.Test;
 import java.time.LocalDateTime;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
-public class StartLogEventParserTest {
+public class EndLogEventParserTest {
 
-    private StartLogEventParser parser = new StartLogEventParser();
+    private EndLogEventParser parser = new EndLogEventParser();
 
     @Test
     public void fill() {
-        LogDefinition.Builder logBuilder = new LogDefinition.Builder("some uid", LogEventType.ACTION_START, LocalDateTime.of(2019, 1, 1, 0, 0),
-                "uuid:some uid action:ACTION_START invocationOrder:1 depth:10 name:com.some.package.TestAction args:  odId = 1, patientId=PAT997 ");
+        LogDefinition.Builder logBuilder = new LogDefinition.Builder("some uid", LogEventType.ACTION_END, LocalDateTime.of(2019, 1, 1, 0, 0),
+                "uuid:some uid action:ACTION_END invocationOrder:1 depth:10 name:com.some.package.TestAction timing: 753");
 
         parser.fill(logBuilder);
 
         LogDefinition result = logBuilder.build();
         assertEquals("some uid", result.getUid());
-        assertEquals(LogEventType.ACTION_START, result.getEventType());
+        assertEquals(LogEventType.ACTION_END, result.getEventType());
         assertEquals(LocalDateTime.of(2019, 1, 1, 0, 0), result.getTimestamp());
         assertEquals(1, result.getInvocationOrder());
         assertEquals(10, result.getDepth().intValue());
         assertEquals("com.some.package.TestAction", result.getActionName());
-        assertEquals("odId = 1, patientId=PAT997", result.getArgs());
-        assertEquals(997, result.getPatientId().longValue());
-        assertEquals("uuid:some uid action:ACTION_START invocationOrder:1 depth:10 name:com.some.package.TestAction args:  odId = 1, patientId=PAT997 ",
+        assertEquals(753, result.getTiming().intValue());
+        assertNull(result.getArgs());
+        assertNull(result.getPatientId());
+        assertEquals("uuid:some uid action:ACTION_END invocationOrder:1 depth:10 name:com.some.package.TestAction timing: 753",
                 result.getFullMessage());
     }
 }

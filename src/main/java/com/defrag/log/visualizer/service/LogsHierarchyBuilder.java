@@ -5,10 +5,7 @@ import com.defrag.log.visualizer.model.LogRoot;
 import com.defrag.log.visualizer.service.bo.LogNode;
 import com.defrag.log.visualizer.service.bo.LogsHierarchy;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 import java.util.stream.Collectors;
 
 class LogsHierarchyBuilder {
@@ -18,7 +15,7 @@ class LogsHierarchyBuilder {
     LogsHierarchyBuilder(List<Log> logs) {
         this.logs = logs
                 .stream()
-                .sorted(new GraylogComparator(logs))
+                .sorted(Comparator.comparing(Log::getInvocationOrder))
                 .collect(Collectors.toList());
     }
 
@@ -28,7 +25,8 @@ class LogsHierarchyBuilder {
         }
 
         final LogRoot logRoot = logs.get(0).getRoot();
-        final LogNode root = LogNode.createRootNode(logRoot.getId(), logRoot.getPayloadName(), logRoot.getDescription(), logRoot.getStartDate());
+        final LogNode root = null;
+//                = LogNode.createRootNode(logRoot.getId(), logRoot.getPayloadName(), logRoot.getDescription(), logRoot.getStartDate());
 
         LogNode lastNode = root;
         for (Log log : logs) {
@@ -50,9 +48,9 @@ class LogsHierarchyBuilder {
 //            }
         }
 
-        if (logRoot.getEndDate() != null) {
-            root.markAsFinished(logRoot.getEndDate());
-        }
+//        if (logRoot.getEndDate() != null) {
+//            root.markAsFinished(logRoot.getEndDate());
+//        }
 
         return toLogsHierarchy(root);
     }

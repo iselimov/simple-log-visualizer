@@ -22,16 +22,28 @@ public class Log {
     @JoinColumn(name = "root")
     private LogRoot root;
 
-    @Column(name = "action_name")
-    private String actionName;
-
-    @Column(name = "description")
-    private String description;
+    @Column(name = "event_type")
+    @Enumerated(EnumType.STRING)
+    private LogEventType eventType;
 
     @Column(name = "timestamp")
     private LocalDateTime timestamp;
 
-    @Column(name = "event_type")
-    @Enumerated(EnumType.STRING)
-    private LogEventType eventType;
+    @Column(name = "invocation_order")
+    private Integer invocationOrder;
+
+    @Column(name = "action_name")
+    private String actionName;
+
+    @Column(name = "args")
+    private String args;
+
+    @Column(name = "full_message")
+    private String fullMessage;
+
+    @Column(name = "patient")
+    private Long patient;
+
+    @Column(name = "exception")
+    private String exception;
 }

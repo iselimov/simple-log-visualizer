@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static com.defrag.log.visualizer.service.utils.DateTimeUtils.convertDateTimeInZone;
 import static com.defrag.log.visualizer.service.utils.DateTimeUtils.toStr;
@@ -39,7 +40,7 @@ public class LoggingService {
     }
 
     public List<LogRoot> getRoots(long sourceId, LocalDateTime from, LocalDateTime to) {
-        return logRootRepository.findBySourceIdAndStartDateBetweenOrderByStartDateDesc(sourceId, from, to);
+        return logRootRepository.findBySourceIdAndFirstActionDateBetweenOrderByFirstActionDateDesc(sourceId, from, to);
     }
 
     public LogsHierarchy getLogsHierarchy(long rootId) {
@@ -48,17 +49,18 @@ public class LoggingService {
     }
 
     public String getGraylogQueryForLogRoot(long logRootId) {
-        LogRoot logRoot = logRootRepository.getOne(logRootId);
-        if (logRoot == null) {
+        Optional<LogRoot> logRoot = logRootRepository.findById(logRootId);
+        if (!logRoot.isPresent()) {
             throw new ValidationException(String.format("Unknown log root with id %d was not found", logRootId));
         }
 
+        LogRoot lr = logRoot.get();
 
-        GraylogSource graylogSource = graylogSourceRepository.getOne(logRoot.getSource().getId());
+        GraylogSource graylogSource = graylogSourceRepository.getOne(lr.getSource().getId());
         String graylogTimezone = graylogSource.getGraylogTimezone();
 
-        LocalDateTime fromInSourceTimezone = convertDateTimeInZone(logRoot.getStartDate(), ZoneId.systemDefault(), ZoneId.of(graylogTimezone));
-        LocalDateTime to = logRoot.getEndDate();
+        LocalDateTime fromInSourceTimezone = convertDateTimeInZone(lr.getFirstActionDate(), ZoneId.systemDefault(), ZoneId.of(graylogTimezone));
+        LocalDateTime to = lr.getLastActionDate();
         if (to == null) {
             to = LocalDateTime.of(2222, 1, 1, 1, 1, 1, 100_000_000);
         }
@@ -68,12 +70,12 @@ public class LoggingService {
     }
 
     public String getGraylogQueryForLog(long logId, LocalDateTime from, LocalDateTime to) {
-        Log log = logRepository.getOne(logId);
-        if (log == null) {
+        Optional<Log> log = logRepository.findById(logId);
+        if (!log.isPresent()) {
             throw new ValidationException(String.format("Unknown log with id %d was not found", logId));
         }
 
-        GraylogSource graylogSource = graylogSourceRepository.getOne(log.getRoot().getSource().getId());
+        GraylogSource graylogSource = graylogSourceRepository.getOne(log.get().getRoot().getSource().getId());
         String graylogTimezone = graylogSource.getGraylogTimezone();
 
         LocalDateTime fromInSourceTimezone = convertDateTimeInZone(from, ZoneId.systemDefault(), ZoneId.of(graylogTimezone));
