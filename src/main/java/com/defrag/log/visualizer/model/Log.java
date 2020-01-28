@@ -32,6 +32,9 @@ public class Log {
     @Column(name = "invocation_order")
     private Integer invocationOrder;
 
+    @Column(name = "depth")
+    private Integer depth;
+
     @Column(name = "action_name")
     private String actionName;
 

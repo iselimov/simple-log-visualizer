@@ -174,6 +174,9 @@ public class GraylogLogHandler {
                 logRootRepository.save(newLog.getRoot());
                 logRepository.save(newLog);
             } else if (isSparqlQuery(logDefinition)) {
+                Log theNearestStartAction = logRepository.findTheNearestActionToQuery(logDefinition.getUid(), LogEventType.ACTION_START,
+                        logDefinition.getDepth(), logDefinition.getTimestamp());
+                Object o = 1;
                 // has not been developed yet
             } else {
                 log.error("Unknown log definition {}", logDefinition);
@@ -236,6 +239,7 @@ public class GraylogLogHandler {
         result.setEventType(logDefinition.getEventType());
         result.setTimestamp(convertDateTimeInZone(logDefinition.getTimestamp(), sourceTimezone, ZoneId.systemDefault()));
         result.setInvocationOrder(logDefinition.getInvocationOrder());
+        result.setDepth(logDefinition.getDepth());
         result.setActionName(logDefinition.getActionName());
         result.setArgs(logDefinition.getArgs());
         result.setFullMessage(logDefinition.getFullMessage());
