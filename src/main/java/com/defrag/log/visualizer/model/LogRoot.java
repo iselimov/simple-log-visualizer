@@ -7,8 +7,6 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -39,9 +37,6 @@ public class LogRoot {
     @Column(name = "creation_date")
     @Setter(AccessLevel.PACKAGE)
     private LocalDateTime creationDate;
-
-    @OneToMany(mappedBy = "root", cascade = CascadeType.REMOVE)
-    private Set<Log> children = new HashSet<>();
 
     @PrePersist
     private void prePersist() {

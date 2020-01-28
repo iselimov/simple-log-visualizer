@@ -31,5 +31,5 @@ CREATE TABLE logger.sparql_query
     start_action             BIGINT        not null
         constraint "fk_sparql_query"
             REFERENCES logger.log (id) ON DELETE CASCADE ON UPDATE NO ACTION,
-    timing             int  not null
+    timing             bigint  not null
 );

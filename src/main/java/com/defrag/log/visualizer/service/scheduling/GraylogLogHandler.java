@@ -3,13 +3,11 @@ package com.defrag.log.visualizer.service.scheduling;
 import com.defrag.log.visualizer.config.GraylogProps;
 import com.defrag.log.visualizer.config.GraylogProps.SearchApiProps;
 import com.defrag.log.visualizer.http.GraylogRestTemplate;
-import com.defrag.log.visualizer.model.Log;
-import com.defrag.log.visualizer.model.LogEventType;
-import com.defrag.log.visualizer.model.LogRoot;
-import com.defrag.log.visualizer.model.LogSource;
+import com.defrag.log.visualizer.model.*;
 import com.defrag.log.visualizer.repository.GraylogSourceRepository;
 import com.defrag.log.visualizer.repository.LogRepository;
 import com.defrag.log.visualizer.repository.LogRootRepository;
+import com.defrag.log.visualizer.repository.SparqlQueryRepository;
 import com.defrag.log.visualizer.service.parsing.GraylogParser;
 import com.defrag.log.visualizer.service.parsing.LoggingConstants;
 import com.defrag.log.visualizer.service.parsing.graylog.model.GraylogResponseWrapper;
@@ -48,6 +46,7 @@ public class GraylogLogHandler {
     private final GraylogSourceRepository sourceRepository;
     private final LogRootRepository logRootRepository;
     private final LogRepository logRepository;
+    private final SparqlQueryRepository sparqlQueryRepository;
 
     private final GraylogProps graylogProps;
     private final UrlComposer urlComposer;
@@ -174,10 +173,12 @@ public class GraylogLogHandler {
                 logRootRepository.save(newLog.getRoot());
                 logRepository.save(newLog);
             } else if (isSparqlQuery(logDefinition)) {
-                Log theNearestStartAction = logRepository.findTheNearestActionToQuery(logDefinition.getUid(), LogEventType.ACTION_START,
-                        logDefinition.getDepth(), logDefinition.getTimestamp());
-                Object o = 1;
-                // has not been developed yet
+                Log nearestStartAction = logRepository.findNearestActionToQuery(logDefinition.getUid(), LogEventType.ACTION_START.getName(),
+                        logDefinition.getDepth(), convertDateTimeInZone(logDefinition.getTimestamp(), sourceTimezone, ZoneId.systemDefault()));
+                if (nearestStartAction == null) {
+                    continue;
+                }
+                sparqlQueryRepository.save(createSparqlQuery(logDefinition, nearestStartAction));
             } else {
                 log.error("Unknown log definition {}", logDefinition);
                 continue;
@@ -229,7 +230,7 @@ public class GraylogLogHandler {
 
     private Log createLog(LogDefinition logDefinition, ZoneId sourceTimezone) {
         Log result = new Log();
-
+        // 4 minutes
         LogRoot logRoot = logRootRepository.findByUid(logDefinition.getUid());
         if (logRoot == null) {
             return null;
@@ -245,6 +246,15 @@ public class GraylogLogHandler {
         result.setFullMessage(logDefinition.getFullMessage());
         result.setPatient(logDefinition.getPatientId());
         result.setException(logDefinition.getException());
+
+        return result;
+    }
+
+    private SparqlQuery createSparqlQuery(LogDefinition logDefinition, Log nearestStartAction) {
+        SparqlQuery result = new SparqlQuery();
+
+        result.setStartAction(nearestStartAction);
+        result.setTiming(logDefinition.getTiming());
 
         return result;
     }
