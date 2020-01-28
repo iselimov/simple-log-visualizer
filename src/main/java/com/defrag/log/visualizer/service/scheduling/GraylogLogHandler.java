@@ -254,6 +254,7 @@ public class GraylogLogHandler {
         SparqlQuery result = new SparqlQuery();
 
         result.setStartAction(nearestStartAction);
+        result.setTimestamp(logDefinition.getTimestamp());
         result.setTiming(logDefinition.getTiming());
 
         return result;

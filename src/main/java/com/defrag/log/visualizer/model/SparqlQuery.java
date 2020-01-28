@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -20,6 +21,9 @@ public class SparqlQuery {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "start_action")
     private Log startAction;
+
+    @Column(name = "timestamp")
+    private LocalDateTime timestamp;
 
     @Column(name = "timing")
     private Long timing;
