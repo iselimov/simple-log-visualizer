@@ -3,7 +3,7 @@ package com.defrag.log.visualizer.service.scheduling;
 import com.defrag.log.visualizer.config.GraylogProps;
 import com.defrag.log.visualizer.http.GraylogRestTemplate;
 import com.defrag.log.visualizer.repository.GraylogSourceRepository;
-import com.defrag.log.visualizer.model.GraylogSource;
+import com.defrag.log.visualizer.model.LogSource;
 import com.defrag.log.visualizer.service.parsing.graylog.model.GraylogCluster;
 import com.defrag.log.visualizer.service.parsing.graylog.model.GraylogStream;
 import com.defrag.log.visualizer.service.parsing.graylog.model.GraylogStreamWrapper;
@@ -46,7 +46,7 @@ public class GraylogSourceHandler {
         try {
             String timezone = getTimezone();
 
-            Set<GraylogSource> existing = new HashSet<>(sourceRepository.findAll());
+            Set<LogSource> existing = new HashSet<>(sourceRepository.findAll());
             getStreams()
                     .stream()
                     .map(curr -> mapToSource(curr, timezone))
@@ -85,8 +85,8 @@ public class GraylogSourceHandler {
         return graylogResponse.getStreams();
     }
 
-    private GraylogSource mapToSource(GraylogStream source, String timezone) {
-        GraylogSource result = new GraylogSource();
+    private LogSource mapToSource(GraylogStream source, String timezone) {
+        LogSource result = new LogSource();
 
         result.setName(source.getName());
         result.setGraylogUId(source.getId());

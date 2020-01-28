@@ -15,6 +15,6 @@ public interface LogRootRepository extends JpaRepository<LogRoot, Long> {
     LogRoot findByUid(String uid);
 
     @Modifying
-    @Query("delete from LogRoot lr where lr.getCreationDate < ?1")
+    @Query("delete from LogRoot lr where lr.creationDate < ?1")
     void deleteAllByUpdateDateBefore(LocalDateTime expiredDate);
 }

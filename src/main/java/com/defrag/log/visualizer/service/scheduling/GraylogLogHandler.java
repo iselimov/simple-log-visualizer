@@ -3,14 +3,15 @@ package com.defrag.log.visualizer.service.scheduling;
 import com.defrag.log.visualizer.config.GraylogProps;
 import com.defrag.log.visualizer.config.GraylogProps.SearchApiProps;
 import com.defrag.log.visualizer.http.GraylogRestTemplate;
-import com.defrag.log.visualizer.model.GraylogSource;
 import com.defrag.log.visualizer.model.Log;
 import com.defrag.log.visualizer.model.LogEventType;
 import com.defrag.log.visualizer.model.LogRoot;
+import com.defrag.log.visualizer.model.LogSource;
 import com.defrag.log.visualizer.repository.GraylogSourceRepository;
 import com.defrag.log.visualizer.repository.LogRepository;
 import com.defrag.log.visualizer.repository.LogRootRepository;
 import com.defrag.log.visualizer.service.parsing.GraylogParser;
+import com.defrag.log.visualizer.service.parsing.LoggingConstants;
 import com.defrag.log.visualizer.service.parsing.graylog.model.GraylogResponseWrapper;
 import com.defrag.log.visualizer.service.parsing.graylog.model.LogDefinition;
 import com.defrag.log.visualizer.service.utils.UrlComposer;
@@ -78,7 +79,7 @@ public class GraylogLogHandler {
         String searchUrl = urlComposer.composeApiResourceUrl(searchApiProps.getUrl());
 
         try {
-            for (GraylogSource source : sourceRepository.findAll()) {
+            for (LogSource source : sourceRepository.findAll()) {
                 try {
                     ZoneId sourceTimezone = ZoneId.of(source.getGraylogTimezone());
                     LocalDateTime from = source.getLastSuccessUpdate();
@@ -142,7 +143,7 @@ public class GraylogLogHandler {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void processSource(GraylogSource source, String searchUrl, Map<String, String> requestParams) {
+    public void processSource(LogSource source, String searchUrl, Map<String, String> requestParams) {
         GraylogResponseWrapper graylogResponseWrapper = restTemplate.get(searchUrl, GraylogResponseWrapper.class, requestParams);
         List<LogDefinition> logDefinitions = graylogParser.parseDefinitions(graylogResponseWrapper);
 
@@ -151,20 +152,25 @@ public class GraylogLogHandler {
         log.info("{} logs for source {} is going to save", logsAmount, source.getName());
     }
 
-    private int processLogDefinitions(List<LogDefinition> logDefinitions, GraylogSource source, ZoneId sourceTimezone) {
+    private int processLogDefinitions(List<LogDefinition> logDefinitions, LogSource source, ZoneId sourceTimezone) {
         int logsAmount = 0;
 
         for (LogDefinition logDefinition : logDefinitions) {
             if (isLogRoot(logDefinition)) {
-                LogRoot newLogRoot = createLogRoot(logDefinition, source);
-                Log newLog = createLog(logDefinition, sourceTimezone);
-                newLogRoot.setFirstActionDate(convertDateTimeInZone(newLog.getTimestamp(), sourceTimezone, ZoneId.systemDefault()));
-                newLogRoot.setLastActionDate(newLogRoot.getFirstActionDate());
+                LogRoot newLogRoot = createLogRoot(logDefinition, source, sourceTimezone);
                 logRootRepository.save(newLogRoot);
+
+                Log newLog = createLog(logDefinition, sourceTimezone);
+                if (newLog == null) {
+                    continue;
+                }
                 logRepository.save(newLog);
             } else if (isLog(logDefinition)) {
                 Log newLog = createLog(logDefinition, sourceTimezone);
-                newLog.getRoot().setLastActionDate(convertDateTimeInZone(newLog.getTimestamp(), sourceTimezone, ZoneId.systemDefault()));
+                if (newLog == null) {
+                    continue;
+                }
+                newLog.getRoot().setLastActionDate(newLog.getTimestamp());
                 logRootRepository.save(newLog.getRoot());
                 logRepository.save(newLog);
             } else if (isSparqlQuery(logDefinition)) {
@@ -181,28 +187,39 @@ public class GraylogLogHandler {
     }
 
     private String prepareQueryString() {
-        return String.format("(\"%s\" OR \"%s\" OR \"%s\" OR \"%s\"\")", LogEventType.ACTION_START.getName(),
-                LogEventType.ACTION_END.getName(), LogEventType.ACTION_ERROR.getName(), LogEventType.SPARQL_QUERY.getName());
+        return String.format("(\"%s%s\" OR \"%s%s\" OR \"%s%s\" OR \"%s%s\" OR \"%s%s\" OR \"%s%s\")", LoggingConstants.ACTION,
+                LogEventType.ACTION_START.getName(), LoggingConstants.ACTION, LogEventType.ACTION_END.getName(),
+                LoggingConstants.ACTION, LogEventType.ACTION_ERROR.getName(), LoggingConstants.ACTION,
+                LogEventType.SPARQL_QUERY.getName(), LoggingConstants.ACTION, LogEventType.WORK_UNIT_START,
+                LoggingConstants.ACTION, LogEventType.WORK_UNIT_END);
     }
 
     private boolean isLogRoot(LogDefinition logDefinition) {
-        return logDefinition.getEventType() == LogEventType.ACTION_START && logDefinition.getInvocationOrder() == 0;
+        return isStartLog(logDefinition) && logDefinition.getInvocationOrder() == 0;
     }
 
     private boolean isLog(LogDefinition logDefinition) {
-        return !isLogRoot(logDefinition) || logDefinition.getEventType() == LogEventType.ACTION_END
-                || logDefinition.getEventType() == LogEventType.ACTION_ERROR;
+        return (isStartLog(logDefinition) && logDefinition.getInvocationOrder() > 0)
+                || logDefinition.getEventType() == LogEventType.ACTION_END
+                || logDefinition.getEventType() == LogEventType.ACTION_ERROR
+                || logDefinition.getEventType() == LogEventType.WORK_UNIT_END;
+    }
+
+    private boolean isStartLog(LogDefinition logDefinition) {
+        return logDefinition.getEventType() == LogEventType.ACTION_START || logDefinition.getEventType() == LogEventType.WORK_UNIT_START;
     }
 
     private boolean isSparqlQuery(LogDefinition logDefinition) {
         return logDefinition.getEventType() == LogEventType.SPARQL_QUERY;
     }
 
-    private LogRoot createLogRoot(LogDefinition logDefinition, GraylogSource source) {
+    private LogRoot createLogRoot(LogDefinition logDefinition, LogSource source, ZoneId sourceTimezone) {
         LogRoot result = new LogRoot();
 
         result.setSource(source);
         result.setUid(logDefinition.getUid());
+        result.setFirstActionDate(convertDateTimeInZone(logDefinition.getTimestamp(), sourceTimezone, ZoneId.systemDefault()));
+        result.setLastActionDate(result.getFirstActionDate());
 
         return result;
     }
@@ -210,7 +227,12 @@ public class GraylogLogHandler {
     private Log createLog(LogDefinition logDefinition, ZoneId sourceTimezone) {
         Log result = new Log();
 
-        result.setRoot(logRootRepository.findByUid(logDefinition.getUid()));
+        LogRoot logRoot = logRootRepository.findByUid(logDefinition.getUid());
+        if (logRoot == null) {
+            return null;
+        }
+
+        result.setRoot(logRoot);
         result.setEventType(logDefinition.getEventType());
         result.setTimestamp(convertDateTimeInZone(logDefinition.getTimestamp(), sourceTimezone, ZoneId.systemDefault()));
         result.setInvocationOrder(logDefinition.getInvocationOrder());

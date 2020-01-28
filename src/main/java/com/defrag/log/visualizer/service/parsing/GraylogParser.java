@@ -1,6 +1,5 @@
 package com.defrag.log.visualizer.service.parsing;
 
-import com.defrag.log.visualizer.model.LogEventType;
 import com.defrag.log.visualizer.service.parsing.graylog.model.GraylogMessage;
 import com.defrag.log.visualizer.service.parsing.graylog.model.GraylogMessageWrapper;
 import com.defrag.log.visualizer.service.parsing.graylog.model.GraylogResponseWrapper;
@@ -55,37 +54,15 @@ public class GraylogParser {
                 continue;
             }
 
-            LogEventType logEventType = defineLogEventType(logMessage, actionPrefixInd);
-            if (logEventType == null) {
-                continue;
-            }
-            String uid = logMessage.substring(uidPrefixInd, actionPrefixInd);
+            LogEventParser parser = parserFactory.getParser(logMessage, positionAfterString(ACTION, actionPrefixInd));
+            String uid = logMessage.substring(positionAfterString(UUID, uidPrefixInd), actionPrefixInd).trim();
 
-            LogDefinition.Builder logBuilder = new LogDefinition.Builder(uid, logEventType, logFromGraylog.getTimestamp(),
+            LogDefinition.Builder logBuilder = new LogDefinition.Builder(uid, parser.eventType(), logFromGraylog.getTimestamp(),
                     logMessage);
-            parserFactory.getParser(logEventType).fill(logBuilder);
+            parser.fill(logBuilder);
             logDefinitions.add(logBuilder.build());
         }
 
         return logDefinitions;
-    }
-
-    private LogEventType defineLogEventType(String logMessage, int actionPrefixInd) {
-        int actionInd = positionAfterString(ACTION, actionPrefixInd);
-        if (logMessage.startsWith(LogEventType.ACTION_START.getName(), actionInd)) {
-            return LogEventType.ACTION_START;
-        }
-        if (logMessage.startsWith(LogEventType.ACTION_END.getName(), actionInd)) {
-            return LogEventType.ACTION_END;
-        }
-        if (logMessage.startsWith(LogEventType.ACTION_ERROR.getName(), actionInd)) {
-            return LogEventType.ACTION_ERROR;
-        }
-        if (logMessage.startsWith(LogEventType.SPARQL_QUERY.getName(), actionInd)) {
-            return LogEventType.SPARQL_QUERY;
-        }
-
-        log.error("Log event type in {} was not found", logMessage);
-        return null;
     }
 }

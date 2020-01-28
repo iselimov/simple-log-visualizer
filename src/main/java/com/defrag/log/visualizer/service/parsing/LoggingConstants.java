@@ -3,10 +3,10 @@ package com.defrag.log.visualizer.service.parsing;
 /**
  * Constants to handle logs.
  */
-final class LoggingConstants {
+public final class LoggingConstants {
 
+    public static final String ACTION = "action:";
     static final String UUID = "uuid:";
-    static final String ACTION = "action:";
     static final String INVOCATION_ORDER = "invocationOrder:";
     static final String DEPTH = "depth:";
     static final String NAME = "name:";

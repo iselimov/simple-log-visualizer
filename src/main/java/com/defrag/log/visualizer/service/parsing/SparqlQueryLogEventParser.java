@@ -15,9 +15,10 @@ import static com.defrag.log.visualizer.service.parsing.utils.ParserUtils.positi
 @Service
 @Slf4j
 class SparqlQueryLogEventParser implements LogEventParser {
+
     @Override
-    public Set<LogEventType> eventTypes() {
-        return EnumSet.of(LogEventType.SPARQL_QUERY);
+    public LogEventType eventType() {
+        return LogEventType.SPARQL_QUERY;
     }
 
     @Override

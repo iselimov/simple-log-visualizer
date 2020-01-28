@@ -16,8 +16,8 @@ import static com.defrag.log.visualizer.service.parsing.utils.ParserUtils.positi
 class ErrorLogEventParser implements LogEventParser {
 
     @Override
-    public Set<LogEventType> eventTypes() {
-        return EnumSet.of(LogEventType.ACTION_ERROR);
+    public LogEventType eventType() {
+        return LogEventType.ACTION_ERROR;
     }
 
     @Override

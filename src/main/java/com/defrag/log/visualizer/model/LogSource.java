@@ -10,9 +10,9 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@DiscriminatorValue("GRAYLOG")
+@Table(name = "log_source")
 @EqualsAndHashCode(of = {"name", "graylogUId", "graylogTimezone"})
-public class GraylogSource {
+public class LogSource {
 
     @Id
     @Column(name = "id")

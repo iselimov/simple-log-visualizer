@@ -1,7 +1,7 @@
 package com.defrag.log.visualizer.service;
 
 import com.defrag.log.visualizer.config.GraylogProps;
-import com.defrag.log.visualizer.model.GraylogSource;
+import com.defrag.log.visualizer.model.LogSource;
 import com.defrag.log.visualizer.model.Log;
 import com.defrag.log.visualizer.model.LogRoot;
 import com.defrag.log.visualizer.repository.GraylogSourceRepository;
@@ -35,7 +35,7 @@ public class LoggingService {
     private final GraylogProps graylogProps;
     private final UrlComposer urlComposer;
 
-    public List<GraylogSource> getSources() {
+    public List<LogSource> getSources() {
         return new ArrayList<>(graylogSourceRepository.findAll());
     }
 
@@ -56,8 +56,8 @@ public class LoggingService {
 
         LogRoot lr = logRoot.get();
 
-        GraylogSource graylogSource = graylogSourceRepository.getOne(lr.getSource().getId());
-        String graylogTimezone = graylogSource.getGraylogTimezone();
+        LogSource logSource = graylogSourceRepository.getOne(lr.getSource().getId());
+        String graylogTimezone = logSource.getGraylogTimezone();
 
         LocalDateTime fromInSourceTimezone = convertDateTimeInZone(lr.getFirstActionDate(), ZoneId.systemDefault(), ZoneId.of(graylogTimezone));
         LocalDateTime to = lr.getLastActionDate();
@@ -66,7 +66,7 @@ public class LoggingService {
         }
         LocalDateTime toInSourceTimezone = convertDateTimeInZone(to, ZoneId.systemDefault(), ZoneId.of(graylogTimezone));
 
-        return composeFilterQuery(graylogSource.getGraylogUId(), fromInSourceTimezone, toInSourceTimezone);
+        return composeFilterQuery(logSource.getGraylogUId(), fromInSourceTimezone, toInSourceTimezone);
     }
 
     public String getGraylogQueryForLog(long logId, LocalDateTime from, LocalDateTime to) {
@@ -75,8 +75,8 @@ public class LoggingService {
             throw new ValidationException(String.format("Unknown log with id %d was not found", logId));
         }
 
-        GraylogSource graylogSource = graylogSourceRepository.getOne(log.get().getRoot().getSource().getId());
-        String graylogTimezone = graylogSource.getGraylogTimezone();
+        LogSource logSource = graylogSourceRepository.getOne(log.get().getRoot().getSource().getId());
+        String graylogTimezone = logSource.getGraylogTimezone();
 
         LocalDateTime fromInSourceTimezone = convertDateTimeInZone(from, ZoneId.systemDefault(), ZoneId.of(graylogTimezone));
         if (to == null) {
@@ -84,7 +84,7 @@ public class LoggingService {
         }
         LocalDateTime toInSourceTimezone = convertDateTimeInZone(to, ZoneId.systemDefault(), ZoneId.of(graylogTimezone));
 
-        return composeFilterQuery(graylogSource.getGraylogUId(), fromInSourceTimezone, toInSourceTimezone);
+        return composeFilterQuery(logSource.getGraylogUId(), fromInSourceTimezone, toInSourceTimezone);
     }
 
     private String composeFilterQuery(String sourceUid, LocalDateTime from, LocalDateTime to) {

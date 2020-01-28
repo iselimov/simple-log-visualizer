@@ -7,7 +7,7 @@ import java.util.Set;
 
 interface LogEventParser {
 
-    Set<LogEventType> eventTypes();
+    LogEventType eventType();
 
     void fill(LogDefinition.Builder logBuilder);
 }

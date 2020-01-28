@@ -9,9 +9,9 @@ import java.time.LocalDateTime;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public class WorkUnitLogEventParserTest {
+public class WorkUnitStartLogEventParserTest {
 
-    private WorkUnitLogEventParser parser = new WorkUnitLogEventParser();
+    private WorkUnitStartLogEventParser parser = new WorkUnitStartLogEventParser();
 
     @Test
     public void fillStartWorkUnit() {

@@ -25,7 +25,7 @@ public class LogRoot {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "source")
-    private GraylogSource source;
+    private LogSource source;
 
     @Column(name = "uid")
     private String uid;
@@ -40,7 +40,7 @@ public class LogRoot {
     @Setter(AccessLevel.PACKAGE)
     private LocalDateTime creationDate;
 
-    @OneToMany(mappedBy = "root")
+    @OneToMany(mappedBy = "root", cascade = CascadeType.REMOVE)
     private Set<Log> children = new HashSet<>();
 
     @PrePersist

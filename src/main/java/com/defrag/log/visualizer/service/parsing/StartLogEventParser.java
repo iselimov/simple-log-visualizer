@@ -5,8 +5,6 @@ import com.defrag.log.visualizer.service.parsing.graylog.model.LogDefinition;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.EnumSet;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,8 +18,8 @@ class StartLogEventParser implements LogEventParser {
     private static final Pattern PATIENT_PATTERN = Pattern.compile("(?<=PAT)\\d+");
 
     @Override
-    public Set<LogEventType> eventTypes() {
-        return EnumSet.of(LogEventType.ACTION_START);
+    public LogEventType eventType() {
+        return LogEventType.ACTION_START;
     }
 
     @Override
