@@ -47,3 +47,7 @@ graylog:
   optional-props:
     only-stream-names:
       - some-name
+
+logging:
+  level:
+    root: info

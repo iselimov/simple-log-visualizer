@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.defrag.log.visualizer.service.parsing.LoggingConstants.ACTION;
@@ -30,39 +31,35 @@ public class GraylogParser {
                 .map(GraylogMessageWrapper::getMessage)
                 .collect(Collectors.toList());
 
-        return parseDefinitions(logsFromGraylog)
-                .stream()
+        return logsFromGraylog.parallelStream()
+                .map(this::parseMessage)
+                .filter(Objects::nonNull)
                 .sorted(Comparator.comparing(LogDefinition::getInvocationOrder))
                 .collect(Collectors.toList());
+
     }
 
-    private List<LogDefinition> parseDefinitions(List<GraylogMessage> logsFromGraylog) {
-        List<LogDefinition> logDefinitions = new ArrayList<>();
+    private LogDefinition parseMessage(final GraylogMessage logFromGraylog) {
+        String logMessage = logFromGraylog.getMessage();
 
-        for (GraylogMessage logFromGraylog : logsFromGraylog) {
-            String logMessage = logFromGraylog.getMessage();
-
-            int uidPrefixInd = logMessage.indexOf(UUID);
-            if (uidPrefixInd == -1) {
-                log.error("Uid in {} was not found", logMessage);
-                continue;
-            }
-
-            int actionPrefixInd = logMessage.indexOf(ACTION, positionAfterString(UUID, uidPrefixInd));
-            if (actionPrefixInd == -1) {
-                log.error("Action in {} was not found", logMessage);
-                continue;
-            }
-
-            LogEventParser parser = parserFactory.getParser(logMessage, positionAfterString(ACTION, actionPrefixInd));
-            String uid = logMessage.substring(positionAfterString(UUID, uidPrefixInd), actionPrefixInd).trim();
-
-            LogDefinition.Builder logBuilder = new LogDefinition.Builder(uid, parser.eventType(), logFromGraylog.getTimestamp(),
-                    logMessage);
-            parser.fill(logBuilder);
-            logDefinitions.add(logBuilder.build());
+        int uidPrefixInd = logMessage.indexOf(UUID);
+        if (uidPrefixInd == -1) {
+            log.error("Uid in {} was not found", logMessage);
+            return null;
         }
 
-        return logDefinitions;
+        int actionPrefixInd = logMessage.indexOf(ACTION, positionAfterString(UUID, uidPrefixInd));
+        if (actionPrefixInd == -1) {
+            log.error("Action in {} was not found", logMessage);
+            return null;
+        }
+
+        LogEventParser parser = parserFactory.getParser(logMessage, positionAfterString(ACTION, actionPrefixInd));
+        String uid = logMessage.substring(positionAfterString(UUID, uidPrefixInd), actionPrefixInd).trim();
+
+        LogDefinition.Builder logBuilder = new LogDefinition.Builder(uid, parser.eventType(), logFromGraylog.getTimestamp(),
+                logMessage);
+        parser.fill(logBuilder);
+        return logBuilder.build();
     }
 }
