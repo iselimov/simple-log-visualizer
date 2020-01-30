@@ -173,12 +173,13 @@ public class GraylogLogHandler {
                 logRootRepository.save(newLog.getRoot());
                 logRepository.save(newLog);
             } else if (isSparqlQuery(logDefinition)) {
+                LocalDateTime queryTimestamp = convertDateTimeInZone(logDefinition.getTimestamp(), sourceTimezone, ZoneId.systemDefault());
                 Log nearestStartAction = logRepository.findNearestActionToQuery(logDefinition.getUid(), LogEventType.ACTION_START.getName(),
-                        logDefinition.getDepth(), convertDateTimeInZone(logDefinition.getTimestamp(), sourceTimezone, ZoneId.systemDefault()));
+                        logDefinition.getDepth(), queryTimestamp);
                 if (nearestStartAction == null) {
                     continue;
                 }
-                sparqlQueryRepository.save(createSparqlQuery(logDefinition, nearestStartAction));
+                sparqlQueryRepository.save(createSparqlQuery(logDefinition, nearestStartAction, queryTimestamp));
             } else {
                 log.error("Unknown log definition {}", logDefinition);
                 continue;
@@ -230,7 +231,6 @@ public class GraylogLogHandler {
 
     private Log createLog(LogDefinition logDefinition, ZoneId sourceTimezone) {
         Log result = new Log();
-        // 4 minutes
         LogRoot logRoot = logRootRepository.findByUid(logDefinition.getUid());
         if (logRoot == null) {
             return null;
@@ -245,16 +245,17 @@ public class GraylogLogHandler {
         result.setArgs(logDefinition.getArgs());
         result.setFullMessage(logDefinition.getFullMessage());
         result.setPatient(logDefinition.getPatientId());
+        result.setTiming(logDefinition.getTiming());
         result.setException(logDefinition.getException());
 
         return result;
     }
 
-    private SparqlQuery createSparqlQuery(LogDefinition logDefinition, Log nearestStartAction) {
+    private SparqlQuery createSparqlQuery(LogDefinition logDefinition, Log nearestStartAction, LocalDateTime timestamp) {
         SparqlQuery result = new SparqlQuery();
 
         result.setStartAction(nearestStartAction);
-        result.setTimestamp(logDefinition.getTimestamp());
+        result.setTimestamp(timestamp);
         result.setTiming(logDefinition.getTiming());
 
         return result;

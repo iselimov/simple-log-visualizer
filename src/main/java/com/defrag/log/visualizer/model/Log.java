@@ -47,6 +47,9 @@ public class Log {
     @Column(name = "patient")
     private Long patient;
 
+    @Column(name = "timing")
+    private Long timing;
+
     @Column(name = "exception")
     private String exception;
 }

@@ -17,6 +17,7 @@ alter table logger.log add column invocation_order INT not null;
 alter table logger.log add column depth int;
 alter table logger.log add column args varchar(1024);
 alter table logger.log add column patient INT;
+alter table logger.log add column timing bigint;
 alter table logger.log add column exception varchar(1024);
 
 alter table logger.log rename column marker to event_type;

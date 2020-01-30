@@ -11,13 +11,13 @@ public class LogRootDto {
 
     private long id;
 
-    private String payloadName;
+    private String uid;
 
-    private String description;
+    private Long patient;
 
-    private long patient;
+    private String firstActionName;
 
-    private LocalDateTime startDate;
+    private LocalDateTime firstActionDate;
 
-    private LocalDateTime endDate;
+    private LocalDateTime lastActionDate;
 }

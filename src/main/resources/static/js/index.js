@@ -55,9 +55,10 @@ function onFindLogRoots() {
 
             appendRow(logRootTable, [
                 logRoot.patient,
-                logRoot.payloadName,
-                logRoot.startDate,
-                logRoot.endDate
+                logRoot.firstActionName,
+                logRoot.uid,
+                logRoot.firstActionDate,
+                logRoot.lastActionDate
             ]);
         });
 
