@@ -52,7 +52,4 @@ public class Log {
 
     @Column(name = "exception")
     private String exception;
-
-    @Column(name = "timing")
-    private Long timing;
 }

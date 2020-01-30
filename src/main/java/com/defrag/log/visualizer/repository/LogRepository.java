@@ -20,7 +20,7 @@ public interface LogRepository extends JpaRepository<Log, Long> {
                     "from logger.log l " +
                     "join logger.log_root lr on lr.id = l.root " +
                     "where lr.uid = cast(?1 as text) and l.event_type = cast(?2 as text) and l.depth = ?3 and l.timestamp <= ?4 " +
-                    "order by l.timestamp desc " +
+                    "order by l.timestamp desc, l.invocation_order desc " +
                     "limit 1", nativeQuery = true)
     Log findNearestActionToQuery(String uid, String eventType, int depth, LocalDateTime queryTimestamp);
 }

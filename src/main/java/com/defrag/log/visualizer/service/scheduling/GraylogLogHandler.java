@@ -95,7 +95,7 @@ public class GraylogLogHandler {
                     requestParams.put(searchApiProps.getUrlLimitParam(), String.valueOf(searchApiProps.getLimitPerDownload()));
 
                     log.info("Processing source {} for the period [{}, {}]", source.getName(), from, to);
-                    self.processSource(source, searchUrl, requestParams);
+                    processSource(source, searchUrl, requestParams);
 
                     source.setLastSuccessUpdate(to.plusNanos(MILLISECOND_IN_NANOS));
                     source.setLastUpdateError(null);

@@ -3,6 +3,8 @@
 var logRestApiUrl = 'http://localhost:8084/logs/';
 var logRootId = new URL(window.location).searchParams.get('logRootId');
 var log;
+let colors = ["#00ff00", "#ffff00", "#ff0000"];
+var minTiming, maxTiming;
 
 var widthSize = 600;
 var nodesAmountPerWidth = 3;
@@ -11,7 +13,8 @@ var heightSize = 400;
 var nodesAmountPerHeight = 12;
 
 $.get(logRestApiUrl + 'root/' + logRootId + '/hierarchy', function ok(logsHierarchy) {
-
+    minTiming = logsHierarchy.minRealTiming ;
+    maxTiming = logsHierarchy.maxRealTiming ;
     var fullWidth = Math.ceil(logsHierarchy.depth / nodesAmountPerWidth) * widthSize;
     var fullHeight = Math.ceil(logsHierarchy.breadth / nodesAmountPerHeight) * heightSize;
     var margin = {top: 20, right: 200, bottom: 20, left: 200},
@@ -89,14 +92,19 @@ $.get(logRestApiUrl + 'root/' + logRootId + '/hierarchy', function ok(logsHierar
 
         nodeEnter.append("circle")
             .attr("r", 1e-6)
-            .style("fill", function (d) {
-                if (d.exception) {
-                    return "red";
+            .style({
+                fill: function (d) {
+                    if (d.exception) {
+                        return "red";
+                    }
+                    if (!d.endDate) {
+                        return "yellow";
+                    }
+                    return "white";
+                },
+                stroke: function (d) {
+                    return getColor(d.realTiming)
                 }
-                if (!d.endDate) {
-                    return "yellow";
-                }
-                return "white";
             });
 
         nodeEnter.append("text")
@@ -174,4 +182,12 @@ function showInGraylog() {
             alert('Something got wrong: ' + response);
         }
     });
+}
+
+function getColor(realTiming) {
+    if (realTiming === maxTiming) {
+        return colors[colors.length - 1]
+    }
+    var timePerIndex = (maxTiming - minTiming) / colors.length;
+    return colors[Math.floor((realTiming - minTiming) / timePerIndex)]
 }
