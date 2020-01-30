@@ -32,24 +32,4 @@ public class WorkUnitStartLogEventParserTest {
         assertNull(result.getPatientId());
         assertEquals("uuid:some uid action:WORK_UNIT_START invocationOrder:1 name: createSmth ", result.getFullMessage());
     }
-
-    @Test
-    public void fillEndWorkUnit() {
-        LogDefinition.Builder logBuilder = new LogDefinition.Builder("some uid", LogEventType.WORK_UNIT_END,
-                LocalDateTime.of(2019, 1, 1, 0, 0),
-                "uuid:some uid action:WORK_UNIT_END name:");
-
-        parser.fill(logBuilder);
-
-        LogDefinition result = logBuilder.build();
-        assertEquals("some uid", result.getUid());
-        assertEquals(LogEventType.WORK_UNIT_END, result.getEventType());
-        assertEquals(LocalDateTime.of(2019, 1, 1, 0, 0), result.getTimestamp());
-        assertEquals(Integer.MAX_VALUE, result.getInvocationOrder());
-        assertNull(result.getDepth());
-        assertEquals("", result.getActionName());
-        assertNull(result.getArgs());
-        assertNull(result.getPatientId());
-        assertEquals("uuid:some uid action:WORK_UNIT_END name:", result.getFullMessage());
-    }
 }

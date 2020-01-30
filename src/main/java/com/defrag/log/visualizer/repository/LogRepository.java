@@ -9,7 +9,11 @@ import java.util.List;
 
 public interface LogRepository extends JpaRepository<Log, Long> {
 
-    List<Log> findAllByRootId(long logRootId);
+    List<Log> findAllByRootIdOrderByInvocationOrder(long logRootId);
+
+    Log findTopByRootIdAndPatientIsNotNull(long rootId);
+
+    Log findTopByRootIdOrderByInvocationOrder(long rootId);
 
     @Query(value =
             "select l.* " +

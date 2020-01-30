@@ -25,17 +25,13 @@ public class LogNode {
     private String exception;
     private boolean rootNode;
 
+    @Setter
+    private Long timing;
+
     @Setter(AccessLevel.PRIVATE)
     @JsonIgnore
     private LogNode parent;
     private List<LogNode> children = new ArrayList<>();
-
-    public static LogNode createRootNode(long id, String name, String description, LocalDateTime startDate) {
-        LogNode logNode = new LogNode(id, name, startDate);
-        logNode.setDescription(description);
-        logNode.setRootNode(true);
-        return logNode;
-    }
 
     public static LogNode createNode(long id, String name, String description, LocalDateTime startDate) {
         LogNode logNode = new LogNode(id, name, startDate);

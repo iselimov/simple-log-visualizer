@@ -58,12 +58,7 @@ public class LoggingController {
         return service.getLogsHierarchy(logRootId);
     }
 
-    @GetMapping("/root/{logRootId}/query")
-    public String getGraylogQueryForLogRoot(@PathVariable @NotNull Long logRootId) {
-        return service.getGraylogQueryForLogRoot(logRootId);
-    }
-
-    @GetMapping("/{logId}/query")
+    @GetMapping(value = "/{logId}/query", produces = MediaType.TEXT_PLAIN_VALUE)
     public String getGraylogQueryForLog(@PathVariable @NotNull Long logId,
                                         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
                                         @RequestParam LocalDateTime from,

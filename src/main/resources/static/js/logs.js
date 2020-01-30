@@ -1,7 +1,6 @@
 
 
-var logRestApiUrl = 'http://localhost:8084/logs/root/';
-var graylogRestApiUrl = 'http://localhost:8084/graylog/';
+var logRestApiUrl = 'http://localhost:8084/logs/';
 var logRootId = new URL(window.location).searchParams.get('logRootId');
 var log;
 
@@ -11,7 +10,7 @@ var nodesAmountPerWidth = 3;
 var heightSize = 400;
 var nodesAmountPerHeight = 12;
 
-$.get(logRestApiUrl + logRootId + '/hierarchy', function ok(logsHierarchy) {
+$.get(logRestApiUrl + 'root/' + logRootId + '/hierarchy', function ok(logsHierarchy) {
 
     var fullWidth = Math.ceil(logsHierarchy.depth / nodesAmountPerWidth) * widthSize;
     var fullHeight = Math.ceil(logsHierarchy.breadth / nodesAmountPerHeight) * heightSize;
@@ -78,11 +77,9 @@ $.get(logRestApiUrl + logRootId + '/hierarchy', function ok(logsHierarchy) {
 
             $("#startDate")[0].innerText = 'Start date: ' + res.startDate;
             $("#endDate")[0].innerText = 'End date: ' + res.endDate;
+            $("#timing")[0].innerText = 'Timing: ' + res.timing;
 
-            log = null;
-            if (!res.rootNode) {
-                log = res;
-            }
+            log = res;
 
             // x grows from top to bottom, y grows from left to right
             $("#logSummary")[0].style.marginLeft = Math.ceil(res.y) + 'px';
@@ -162,14 +159,9 @@ $.get(logRestApiUrl + logRootId + '/hierarchy', function ok(logsHierarchy) {
 });
 
 function showInGraylog() {
-    var url;
-    if (log) {
-        url = graylogRestApiUrl + log.id + '/query?from=' + log.startDate;
-        if (log.endDate) {
-            url += '&to=' + log.endDate;
-        }
-    } else {
-        url = graylogRestApiUrl + 'root/' + logRootId + '/query';
+    var url = logRestApiUrl + log.id + '/query?from=' + log.startDate;
+    if (log.endDate) {
+        url += '&to=' + log.endDate;
     }
 
     $.get(url, function ok(filterQueryUrl) {
