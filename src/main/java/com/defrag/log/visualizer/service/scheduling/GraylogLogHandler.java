@@ -95,7 +95,7 @@ public class GraylogLogHandler {
                     requestParams.put(searchApiProps.getUrlLimitParam(), String.valueOf(searchApiProps.getLimitPerDownload()));
 
                     log.info("Processing source {} for the period [{}, {}]", source.getName(), from, to);
-                    self.processSource(source, searchUrl, requestParams);
+                    processSource(source, searchUrl, requestParams);
 
                     source.setLastSuccessUpdate(to.plusNanos(MILLISECOND_IN_NANOS));
                     source.setLastUpdateError(null);
@@ -141,11 +141,13 @@ public class GraylogLogHandler {
         return LocalDateTime.ofEpochSecond(middleAverageInSeconds, MILLISECOND_IN_NANOS, ZoneOffset.UTC);
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void processSource(LogSource source, String searchUrl, Map<String, String> requestParams) {
+    //todo annotation not work in one class method without aspect something property in spring config
+    //@Transactional(propagation = Propagation.REQUIRES_NEW)
+    private void processSource(LogSource source, String searchUrl, Map<String, String> requestParams) {
         GraylogResponseWrapper graylogResponseWrapper = restTemplate.get(searchUrl, GraylogResponseWrapper.class, requestParams);
+        log.info("Parsing started");
         List<LogDefinition> logDefinitions = graylogParser.parseDefinitions(graylogResponseWrapper);
-
+        log.info("Parsing finished");
         int logsAmount = processLogDefinitions(logDefinitions, source, ZoneId.of(source.getGraylogTimezone()));
 
         log.info("{} logs for source {} is going to save", logsAmount, source.getName());
@@ -247,6 +249,7 @@ public class GraylogLogHandler {
         result.setPatient(logDefinition.getPatientId());
         result.setTiming(logDefinition.getTiming());
         result.setException(logDefinition.getException());
+        result.setTiming(logDefinition.getTiming());
 
         return result;
     }

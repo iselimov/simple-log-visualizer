@@ -27,6 +27,7 @@ public class LogNode {
 
     @Setter
     private Long timing;
+    private Long realTiming = 0L;
 
     @Setter(AccessLevel.PRIVATE)
     @JsonIgnore
@@ -52,5 +53,11 @@ public class LogNode {
 
     public void markAsFinished(LocalDateTime endDate) {
         this.endDate = endDate;
+    }
+
+    //we could substruct child note timing before we get parent timing, but this substraction should be implemented later
+    // so it will be like timing - 20 = -20  in the end +45 = 25 real timing
+    public void updateRealTiming(Long timing) {
+        realTiming = realTiming + timing;
     }
 }

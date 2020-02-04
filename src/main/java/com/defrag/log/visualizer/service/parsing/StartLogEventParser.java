@@ -84,14 +84,14 @@ class StartLogEventParser implements LogEventParser {
         if (patientMatcher.find()) {
             patientStr = patientMatcher.group();
         } else {
-            log.error("Could parse patient in {}", parsingMessage);
+            log.error("Couldn't parse patient in {}", parsingMessage);
             return null;
         }
 
         try {
             return Long.parseLong(patientStr);
         } catch (NumberFormatException e) {
-            log.error("Could translate patient str {} -> digit in {}", patientStr, parsingMessage);
+            log.error("Couldn't translate patient str {} -> digit in {}", patientStr, parsingMessage);
             return null;
         }
     }
