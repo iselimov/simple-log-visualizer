@@ -81,6 +81,7 @@ $.get(logRestApiUrl + 'root/' + logRootId + '/hierarchy', function ok(logsHierar
             $("#startDate")[0].innerText = 'Start date: ' + res.startDate;
             $("#endDate")[0].innerText = 'End date: ' + res.endDate;
             $("#timing")[0].innerText = 'Timing: ' + res.timing;
+            $("#realTiming")[0].innerText = 'Real Timing: ' + res.realTiming;
 
             log = res;
 
